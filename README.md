@@ -5,7 +5,7 @@ format that is safe for AI agents and CI.
 
 It is intentionally strict about source format:
 
-- Source documents are JSON-based `.a-doc` files.
+- Source documents are TOON-based `.toon` files by default (`.a-doc` is supported for legacy docs).
 - Markdown is treated as generated output only (by default).
 - Validation enforces references, status consistency, conflict symmetry, and optional contradiction matrices.
 - Optional generation creates human-readable markdown and/or compact TOON outputs from the source artifacts.
@@ -31,20 +31,20 @@ agent-docs generate --format both
 `agent-docs init` creates/refreshes:
 
 - `.agent-docs/config.json`
-- `.agent-docs/templates/*.a-doc` (starter documents)
+- `.agent-docs/templates/*.toon` (starter documents; `.a-doc` starter templates kept for legacy compatibility)
 - `.agent-docs/hooks/pre-commit` and `.agent-docs/hooks/pre-push` templates
-- `docs/PLAN.a-doc` starter plan if not already present
+- `docs/PLAN.toon` starter plan if not already present
 
 ## Command reference
 
 ### `agent-docs check [root]`
 
 - Reads config and validates:
-  - `.a-doc` structure and required fields
+  - source artifact structure and required fields
   - references and IDs
   - status values and canonical keys
   - conflict symmetry
-  - configured contradiction matrix (`.agent-docs/contradictions.json`)
+  - configured contradiction matrix (`.agent-docs/contradictions.json` or `.agent-docs/contradictions.toon`)
   - markdown policy (no free markdown docs outside generated paths by default)
   - generated manifest freshness (optional via config strictness)
 - Writes JSON report to `.agent-docs/reports/check-report.json`
@@ -102,7 +102,7 @@ Create `.agent-docs/config.json` to customize behavior. Missing values are merge
 
 Common options:
 
-- `sourceExtension`: file extension for source artifacts (default `.a-doc`)
+- `sourceExtension`: file extension for source artifacts (default `.toon`)
 - `sourceRoots`: directories searched for source docs
 - `markdownPolicy.mode`: `deny` (default), `warn`, `allow`
 - `generated.markdownRoot`: output folder for generated markdown (`generated`)

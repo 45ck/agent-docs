@@ -12,7 +12,7 @@ const program = new Command();
 program
   .name('agent-docs')
   .description('Structured planning artifacts and AI-agent-safe documentation workflows')
-  .version('0.3.0');
+  .version('0.3.1');
 
 program
   .command('init')
@@ -43,7 +43,7 @@ program
 
 program
   .command('generate')
-  .description('Generate markdown/TOON outputs from .a-doc sources')
+  .description('Generate markdown/TOON outputs from source artifacts')
   .argument('[root]', 'Project root', process.cwd())
   .option('--format <format>', 'Output format: markdown, toon, both', 'markdown')
   .option('--strict', 'Fail on warnings before generation')

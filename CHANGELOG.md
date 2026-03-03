@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1
+
+- Change default source documents to `.toon`.
+- Add `.toon` support for source document parsing with fallback for `.a-doc`.
+- Keep compatibility for legacy `.a-doc` templates and `contradictions.json`.
+- Add template `.toon` variants for main starter artifact types.
+- Update `agent-docs init` to create `.toon` starter plans by default.
+
 ## 0.3.0
 
 - Bump package to a reusable release version and align CLI versioning.

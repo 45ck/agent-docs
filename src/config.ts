@@ -14,7 +14,7 @@ const DEFAULT_IGNORE: string[] = [
 ];
 
 export const DEFAULT_CONFIG: Omit<AgentDocsConfig, 'version'> = {
-  sourceExtension: '.a-doc',
+  sourceExtension: '.toon',
   sourceRoots: ['docs'],
   ignorePaths: DEFAULT_IGNORE,
   generated: {

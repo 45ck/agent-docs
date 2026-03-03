@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { decode } from '@toon-format/toon';
 import type {
   ValidationIssue,
   GateReport,
@@ -105,9 +106,14 @@ export async function loadArtifacts(
 ): Promise<ParsedArtifact[]> {
   const candidateFiles = await collectStructuredDocs(root, config);
   const artifacts: ParsedArtifact[] = [];
+  const sourceExtension = config.sourceExtension.toLowerCase();
+  const candidateExtensions = sourceExtension === '.toon'
+    ? new Set(['.toon', '.a-doc'])
+    : new Set([sourceExtension]);
 
   for (const file of candidateFiles) {
-    if (!file.toLowerCase().endsWith(config.sourceExtension.toLowerCase())) {
+    const extension = path.extname(file).toLowerCase();
+    if (!candidateExtensions.has(extension)) {
       continue;
     }
 
@@ -117,20 +123,31 @@ export async function loadArtifacts(
       continue;
     }
 
-    let parsed: ArtifactInput;
+    let parsed: unknown;
     try {
-      parsed = JSON.parse(source) as ArtifactInput;
+      parsed = extension === '.toon' ? decode(source) : JSON.parse(source);
     } catch (error) {
+      const formatLabel = extension === '.toon' ? 'TOON' : 'JSON';
       collector.push({
         code: 'PARSE_FAIL',
         severity: 'error',
-        message: `Invalid JSON in ${file}: ${(error as Error).message}`,
+        message: `Invalid ${formatLabel} in ${file}: ${(error as Error).message}`,
         path: file,
       });
       continue;
     }
 
-    const artifact = normalizeArtifact(file, parsed, collector, config);
+    if (!parsed || typeof parsed !== 'object') {
+      collector.push({
+        code: 'PARSE_FAIL',
+        severity: 'error',
+        message: `${file} must decode to an object`,
+        path: file,
+      });
+      continue;
+    }
+
+    const artifact = normalizeArtifact(file, parsed as ArtifactInput, collector, config);
     if (artifact) {
       artifact.sourceHash = sha1(source);
       artifacts.push(artifact);
@@ -416,17 +433,42 @@ export function buildReport(start: number, root: string, collector: Collector, c
 export async function readContradictionMatrix(
   root: string,
 ): Promise<ContradictionMatrix | null> {
-  const file = path.join(root, '.agent-docs', 'contradictions.json');
-  try {
-    const raw = await fs.readFile(file, 'utf8');
-    const parsed = JSON.parse(raw) as ContradictionMatrix;
-    if (!parsed || !Array.isArray(parsed.entries)) {
-      return null;
+  const candidates = [
+    path.join(root, '.agent-docs', 'contradictions.toon'),
+    path.join(root, '.agent-docs', 'contradictions.json'),
+  ];
+
+  for (const file of candidates) {
+    const parsed = await readContradictionFile(file);
+    if (parsed) {
+      return parsed;
     }
-    return parsed;
+  }
+
+  return null;
+}
+
+async function readContradictionFile(filePath: string): Promise<ContradictionMatrix | null> {
+  try {
+    const raw = await fs.readFile(filePath, 'utf8');
+    const parsed = filePath.toLowerCase().endsWith('.toon') ? decode(raw) : JSON.parse(raw);
+    if (isValidContradictionMatrix(parsed)) {
+      return parsed;
+    }
   } catch {
     return null;
   }
+
+  return null;
+}
+
+function isValidContradictionMatrix(value: unknown): value is ContradictionMatrix {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      typeof (value as { version?: unknown }).version === 'string' &&
+      Array.isArray((value as { entries?: unknown[] }).entries),
+  );
 }
 
 export function sha1(content: string): string {
