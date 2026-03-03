@@ -9,6 +9,7 @@
   "tags": ["prd", "requirements"],
   "implements": [],
   "dependsOn": [],
+  "references": [],
   "supersedes": [],
   "supersededBy": [],
   "conflictsWith": [],

@@ -9,6 +9,7 @@
   "tags": ["adr", "decision"],
   "implements": [],
   "dependsOn": [],
+  "references": [],
   "supersedes": [],
   "supersededBy": [],
   "conflictsWith": [],

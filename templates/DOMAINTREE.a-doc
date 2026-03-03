@@ -9,9 +9,13 @@
   "tags": ["domain", "model"],
   "implements": [],
   "dependsOn": [],
+  "references": [],
   "supersedes": [],
   "supersededBy": [],
   "conflictsWith": [],
+  "metadata": {
+    "terms": ["task", "notes", "priority", "dueDate", "completed", "overdue", "tag", "story"]
+  },
   "sections": [
     {
       "title": "Root Domain",

@@ -19,6 +19,36 @@ export type ArtifactStatus =
 
 export type ValidationSeverity = 'info' | 'warning' | 'error';
 
+export type ArtifactReferenceField = 'dependsOn' | 'supersedes' | 'supersededBy' | 'conflictsWith' | 'references';
+
+export interface ArtifactReferenceRule {
+  sourceKinds: string[];
+  field: ArtifactReferenceField;
+  allowedTargetKinds?: string[];
+  requiredTargetKinds?: string[];
+  minCount?: number;
+  maxCount?: number;
+  requiredTargetMinCount?: number;
+  severity?: ValidationSeverity;
+}
+
+export interface ReferencesValidationConfig {
+  enabled: boolean;
+  rules: ArtifactReferenceRule[];
+}
+
+export interface TerminologyValidationConfig {
+  enabled: boolean;
+  sourceKinds: string[];
+  termMetadataKeys: string[];
+  aliasMetadataKey: string;
+  termRegex: string;
+  includeTitle: boolean;
+  includeSectionTitles: boolean;
+  includeSectionBodies: boolean;
+  unknownTermSeverity: ValidationSeverity;
+}
+
 export interface ValidationIssue {
   code: string;
   severity: ValidationSeverity;
@@ -63,6 +93,7 @@ export interface ArtifactInput {
   supersedes?: string[];
   supersededBy?: string[];
   conflictsWith?: string[];
+  references?: string[];
   canonicalKey?: string;
   tags?: string[];
   sections?: ArtifactSection[];
@@ -84,6 +115,7 @@ export interface ParsedArtifact {
   supersedes: string[];
   supersededBy: string[];
   conflictsWith: string[];
+  references: string[];
   canonicalKey?: string;
   tags: string[];
   sections: ArtifactSection[];
@@ -164,6 +196,8 @@ export interface AgentDocsConfig {
     requireCodeTraceability: boolean;
     requireCodeSymbols: boolean;
   };
+  references: ReferencesValidationConfig;
+  terminology: TerminologyValidationConfig;
   contracts: ContractChecksConfig;
   codeTraceability: {
     requireForKinds: string[];

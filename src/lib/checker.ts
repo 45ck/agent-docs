@@ -13,6 +13,7 @@ import type {
   GeneratedManifestEntry,
   ArtifactStatus,
   CodeTraceabilityReference,
+  ArtifactReferenceField,
 } from '../types.js';
 
 const ALLOWED_STATUSES: Set<ArtifactStatus> = new Set<ArtifactStatus>([
@@ -32,6 +33,13 @@ const CONTRADICTION_SEVERITY_ORDER: Record<'low' | 'medium' | 'high' | 'critical
   high: 3,
   critical: 4,
 };
+const REFERENCE_FIELD_SET = new Set<ArtifactReferenceField>([
+  'dependsOn',
+  'supersedes',
+  'supersededBy',
+  'conflictsWith',
+  'references',
+]);
 
 export class Collector {
   constructor(private readonly issues: ValidationIssue[] = []) {}
@@ -217,6 +225,9 @@ export async function evaluateArtifactGraph(
     validateReferenceField('dependsOn', artifact.dependsOn, artifact, knownIds, collector);
     validateReferenceField('supersedes', artifact.supersedes, artifact, knownIds, collector);
     validateReferenceField('supersededBy', artifact.supersededBy, artifact, knownIds, collector);
+    validateReferenceField('references', artifact.references, artifact, knownIds, collector);
+
+    evaluateReferenceRules(artifact, byId, config, collector);
 
     for (const conflict of artifact.conflictsWith) {
       if (conflict === artifact.id) {
@@ -295,6 +306,312 @@ export async function evaluateArtifactGraph(
       }
     }
   }
+
+  evaluateTerminologyConsistency(artifacts, config, collector);
+}
+
+export function evaluateReferenceRules(
+  artifact: ParsedArtifact,
+  byId: Map<string, ParsedArtifact>,
+  config: AgentDocsConfig,
+  collector: Collector,
+): void {
+  const rules = config.references?.enabled ? config.references.rules : [];
+  if (rules.length === 0) {
+    return;
+  }
+
+  const knownTargetKinds = new Map<string, string>();
+  for (const [id, target] of byId.entries()) {
+    knownTargetKinds.set(id, target.kind);
+  }
+
+  for (const rule of rules) {
+    if (!isKnownReferenceField(rule.field)) {
+      collector.push({
+        code: 'INVALID_REFERENCE_FIELD',
+        severity: rule.severity ?? 'warning',
+        message: `Invalid reference rule field "${String(rule.field)}" in config for ${artifact.id}`,
+        path: artifact.path,
+      });
+      continue;
+    }
+
+    if (!isRuleApplicable(rule.sourceKinds, artifact.kind)) {
+      continue;
+    }
+
+    const references = getReferencesByField(artifact, rule.field);
+    if (rule.minCount && references.length < rule.minCount) {
+      collector.push({
+        code: 'MIN_RELATIONSHIP_COUNT',
+        severity: rule.severity ?? 'error',
+        message: `${artifact.id} must declare at least ${rule.minCount} ${rule.field} references`,
+        path: artifact.path,
+      });
+    }
+
+    if (rule.maxCount !== undefined && references.length > rule.maxCount) {
+      collector.push({
+        code: 'MAX_RELATIONSHIP_COUNT',
+        severity: rule.severity ?? 'warning',
+        message: `${artifact.id} should not exceed ${rule.maxCount} ${rule.field} references`,
+        path: artifact.path,
+      });
+    }
+
+    if (rule.allowedTargetKinds?.length) {
+      const allowedSet = new Set(rule.allowedTargetKinds.map((value) => value.toLowerCase()));
+      for (const targetId of references) {
+        const kind = knownTargetKinds.get(targetId);
+        if (!kind) {
+          continue;
+        }
+        if (!allowedSet.has(normalizeKind(kind))) {
+          collector.push({
+            code: 'INVALID_REFERENCE_KIND',
+            severity: rule.severity ?? 'error',
+            message: `${artifact.id} references ${targetId} from ${rule.field}, but ${targetId} is kind ${kind}; allowed: ${rule.allowedTargetKinds.join(', ')}`,
+            path: artifact.path,
+          });
+        }
+      }
+    }
+
+    if (rule.requiredTargetKinds?.length) {
+      const requiredKinds = new Set(rule.requiredTargetKinds.map((value) => value.toLowerCase()));
+      const requiredTargetMinCount = rule.requiredTargetMinCount ?? 1;
+      const matchingCount = references.reduce((acc, targetId) => {
+        const kind = knownTargetKinds.get(targetId);
+        return kind && requiredKinds.has(normalizeKind(kind)) ? acc + 1 : acc;
+      }, 0);
+      if (matchingCount < requiredTargetMinCount) {
+        collector.push({
+          code: 'MISSING_REQUIRED_REFERENCE_KIND',
+          severity: rule.severity ?? 'error',
+          message: `${artifact.id} requires at least ${requiredTargetMinCount} references in ${rule.field} to: ${rule.requiredTargetKinds.join(', ')}`,
+          path: artifact.path,
+        });
+      }
+    }
+  }
+}
+
+function getReferencesByField(artifact: ParsedArtifact, field: ArtifactReferenceField): string[] {
+  switch (field) {
+    case 'dependsOn':
+      return artifact.dependsOn;
+    case 'supersedes':
+      return artifact.supersedes;
+    case 'supersededBy':
+      return artifact.supersededBy;
+    case 'conflictsWith':
+      return artifact.conflictsWith;
+    case 'references':
+      return artifact.references;
+    default:
+      return [];
+  }
+}
+
+function isRuleApplicable(sourceKinds: string[], artifactKind: string): boolean {
+  if (!sourceKinds || sourceKinds.length === 0) {
+    return true;
+  }
+  const normalized = sourceKinds.map((value) => normalizeKind(value));
+  return normalized.includes('*') || normalized.includes(normalizeKind(artifactKind));
+}
+
+function isKnownReferenceField(value: string): value is ArtifactReferenceField {
+  return REFERENCE_FIELD_SET.has(value as ArtifactReferenceField);
+}
+
+function evaluateTerminologyConsistency(
+  artifacts: ParsedArtifact[],
+  config: AgentDocsConfig,
+  collector: Collector,
+): void {
+  if (!config.terminology?.enabled) {
+    return;
+  }
+
+  const allowedTerms = collectTermDefinitions(artifacts, config);
+  if (allowedTerms.size === 0) {
+    collector.push({
+      code: 'MISSING_TERM_DICTIONARY',
+      severity: config.terminology.unknownTermSeverity,
+      message:
+        'No terminology dictionary found in source artifacts. Add terms to DOMAINTREE metadata for terminology validation.',
+      path: artifacts[0]?.path,
+    });
+    return;
+  }
+
+  const aliases = collectTermAliases(artifacts, config);
+  let regex: RegExp;
+  try {
+    regex = new RegExp(config.terminology.termRegex, 'g');
+  } catch {
+    regex = /\{\{\s*([^}]+?)\s*\}\}/g;
+  }
+
+  for (const artifact of artifacts) {
+    const textFragments = [
+      config.terminology.includeTitle ? artifact.title : '',
+      ...artifact.sections.flatMap((section) => [
+        config.terminology.includeSectionTitles ? section.title : '',
+        config.terminology.includeSectionBodies ? section.body : '',
+      ]),
+    ];
+
+    for (const fragment of textFragments) {
+      const matches = collectTermRefsFromText(fragment, regex);
+      for (const match of matches) {
+        const normalized = normalizeTerm(match);
+        if (!normalized) {
+          continue;
+        }
+
+        if (!allowedTerms.has(normalized) && !aliases.has(normalized)) {
+          collector.push({
+            code: 'UNKNOWN_TERM_REFERENCE',
+            severity: config.terminology.unknownTermSeverity,
+            message: `Unknown terminology reference "{{${match}}}" in ${artifact.id}. Add to DOMAINTREE terminology definitions.`,
+            path: artifact.path,
+          });
+        }
+      }
+    }
+  }
+}
+
+function collectTermDefinitions(artifacts: ParsedArtifact[], config: AgentDocsConfig): Set<string> {
+  const acceptedSourceKinds = new Set(config.terminology.sourceKinds.map((value) => normalizeKind(value)));
+  const terms = new Set<string>();
+  if (acceptedSourceKinds.size === 0) {
+    return terms;
+  }
+
+  for (const artifact of artifacts) {
+    if (!acceptedSourceKinds.has(normalizeKind(artifact.kind))) {
+      continue;
+    }
+    for (const fieldName of config.terminology.termMetadataKeys) {
+      const value = artifact.raw?.metadata?.[fieldName];
+      collectTermsFromValue(value, terms);
+    }
+  }
+
+  return terms;
+}
+
+function collectTermAliases(artifacts: ParsedArtifact[], config: AgentDocsConfig): Set<string> {
+  const aliasSet = new Set<string>();
+  const acceptedSourceKinds = new Set(config.terminology.sourceKinds.map((value) => normalizeKind(value)));
+  if (acceptedSourceKinds.size === 0) {
+    return aliasSet;
+  }
+
+  for (const artifact of artifacts) {
+    if (!acceptedSourceKinds.has(normalizeKind(artifact.kind))) {
+      continue;
+    }
+    const aliases = artifact.raw?.metadata?.[config.terminology.aliasMetadataKey];
+    if (!aliases) {
+      continue;
+    }
+    if (typeof aliases === 'string') {
+      for (const entry of aliases.split(',').map((entry) => entry.trim()).filter(Boolean)) {
+        const normalized = normalizeTerm(entry);
+        if (normalized) {
+          aliasSet.add(normalized);
+        }
+      }
+      continue;
+    }
+    if (Array.isArray(aliases)) {
+      for (const alias of aliases) {
+        const normalized = normalizeTerm(String(alias ?? ''));
+        if (normalized) {
+          aliasSet.add(normalized);
+        }
+      }
+      continue;
+    }
+    if (typeof aliases === 'object') {
+      for (const alias of Object.keys(aliases)) {
+        const normalized = normalizeTerm(alias);
+        if (normalized) {
+          aliasSet.add(normalized);
+        }
+      }
+    }
+  }
+
+  return aliasSet;
+}
+
+function collectTermsFromValue(value: unknown, output: Set<string>): void {
+  if (typeof value === 'string') {
+    for (const entry of value.split(',').map((entry) => entry.trim()).filter(Boolean)) {
+      const normalized = normalizeTerm(entry);
+      if (normalized) {
+        output.add(normalized);
+      }
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (typeof item === 'string') {
+        const normalized = normalizeTerm(item);
+        if (normalized) {
+          output.add(normalized);
+        }
+      }
+    }
+    return;
+  }
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    for (const key of Object.keys(record)) {
+      const normalized = normalizeTerm(key);
+      if (normalized) {
+        output.add(normalized);
+      }
+      const valueEntry = record[key];
+      if (typeof valueEntry === 'string') {
+        for (const entry of valueEntry.split(',').map((entry) => entry.trim()).filter(Boolean)) {
+          const nested = normalizeTerm(entry);
+          if (nested) {
+            output.add(nested);
+          }
+        }
+      }
+    }
+  }
+}
+
+function collectTermRefsFromText(value: string, pattern: RegExp): string[] {
+  if (!value) {
+    return [];
+  }
+  const matches: string[] = [];
+  pattern.lastIndex = 0;
+  let match = pattern.exec(value);
+  while (match !== null) {
+    const candidate = String(match[1] ?? '').trim();
+    if (candidate) {
+      matches.push(candidate);
+    }
+    if (pattern.global) {
+      match = pattern.exec(value);
+    } else {
+      break;
+    }
+  }
+
+  return matches;
 }
 
 export async function evaluateCodeTraceability(
@@ -647,6 +964,7 @@ function normalizeArtifact(
     dependsOn: uniqueList(input.dependsOn),
     supersedes: uniqueList(input.supersedes),
     supersededBy: uniqueList(input.supersededBy),
+    references: uniqueList(input.references),
     conflictsWith: uniqueList(input.conflictsWith),
     canonicalKey: input.canonicalKey ? String(input.canonicalKey).trim() : undefined,
     tags: uniqueList(input.tags),
@@ -817,7 +1135,7 @@ function uniqueList(value: unknown): string[] {
 }
 
 function validateReferenceField(
-  field: 'dependsOn' | 'supersedes' | 'supersededBy',
+  field: ArtifactReferenceField,
   references: string[],
   source: ParsedArtifact,
   knownIds: Set<string>,
@@ -890,4 +1208,12 @@ function normalizePath(filePath: string): string {
     .replace(/\\/g, '/')
     .replace(/^\/+/, '')
     .replace(/\/+$/, '');
+}
+
+function normalizeKind(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+function normalizeTerm(raw: string): string {
+  return raw.trim().replace(/\s+/g, ' ').toLowerCase();
 }

@@ -8,6 +8,7 @@ date: 2026-03-03
 tags[2]: policy,governance
 implements[0]:
 dependsOn[0]:
+references[0]:
 supersedes[0]:
 supersededBy[0]:
 conflictsWith[0]:

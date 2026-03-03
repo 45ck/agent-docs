@@ -44,6 +44,21 @@ export const DEFAULT_CONFIG: Omit<AgentDocsConfig, 'version'> = {
     requireCodeTraceability: false,
     requireCodeSymbols: false,
   },
+  references: {
+    enabled: false,
+    rules: [],
+  },
+  terminology: {
+    enabled: false,
+    sourceKinds: ['DOMAINTREE'],
+    termMetadataKeys: ['terms'],
+    aliasMetadataKey: 'termAliases',
+    termRegex: '\\{\\{\\s*([^}]+?)\\s*\\}\\}',
+    includeTitle: true,
+    includeSectionTitles: false,
+    includeSectionBodies: true,
+    unknownTermSeverity: 'warning',
+  },
   contracts: {
     enabled: false,
     check: null,
@@ -126,6 +141,33 @@ function hydrateConfig(parsed: Partial<AgentDocsConfig> | undefined): AgentDocsC
         parsed.strict?.requireCodeTraceability ?? fallback.strict.requireCodeTraceability,
       requireCodeSymbols:
         parsed.strict?.requireCodeSymbols ?? fallback.strict.requireCodeSymbols,
+    },
+    references: {
+      enabled: parsed.references?.enabled ?? fallback.references.enabled,
+      rules: (parsed.references?.rules ?? fallback.references.rules).map((entry) => ({
+        sourceKinds: entry.sourceKinds ?? ['*'],
+        field: entry.field,
+        allowedTargetKinds: entry.allowedTargetKinds ?? undefined,
+        requiredTargetKinds: entry.requiredTargetKinds ?? undefined,
+        minCount: entry.minCount ?? undefined,
+        maxCount: entry.maxCount ?? undefined,
+        requiredTargetMinCount: entry.requiredTargetMinCount ?? undefined,
+        severity: entry.severity ?? undefined,
+      })),
+    },
+    terminology: {
+      enabled: parsed.terminology?.enabled ?? fallback.terminology.enabled,
+      sourceKinds: parsed.terminology?.sourceKinds ?? fallback.terminology.sourceKinds,
+      termMetadataKeys: parsed.terminology?.termMetadataKeys ?? fallback.terminology.termMetadataKeys,
+      aliasMetadataKey: parsed.terminology?.aliasMetadataKey ?? fallback.terminology.aliasMetadataKey,
+      termRegex: parsed.terminology?.termRegex ?? fallback.terminology.termRegex,
+      includeTitle: parsed.terminology?.includeTitle ?? fallback.terminology.includeTitle,
+      includeSectionTitles:
+        parsed.terminology?.includeSectionTitles ?? fallback.terminology.includeSectionTitles,
+      includeSectionBodies:
+        parsed.terminology?.includeSectionBodies ?? fallback.terminology.includeSectionBodies,
+      unknownTermSeverity:
+        parsed.terminology?.unknownTermSeverity ?? fallback.terminology.unknownTermSeverity,
     },
     contracts: {
       enabled: parsed.contracts?.enabled ?? fallback.contracts.enabled,

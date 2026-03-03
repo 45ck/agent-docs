@@ -9,6 +9,7 @@
   "tags": ["policy", "governance"],
   "implements": [],
   "dependsOn": [],
+  "references": [],
   "supersedes": [],
   "supersededBy": [],
   "conflictsWith": [],

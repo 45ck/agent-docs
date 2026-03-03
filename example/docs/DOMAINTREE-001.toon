@@ -8,9 +8,12 @@ date: 2026-03-03
 canonicalKey: todo-app-domain
 tags[2]: domain,model
 dependsOn[1]: SRD-001
+references[0]:
 supersedes[0]:
 supersededBy[0]:
 conflictsWith[0]:
+metadata:
+  terms[8]: task,notes,priority,dueDate,completed,overdue,tag,story
 sections[6]{title,body}:
   Root Entity,Task is the primary aggregate persisted as JSON in localStorage.
   Attributes,id string from crypto randomUUID title text notes text priority enum dueDate ISO text completed boolean tags array and createdAt timestamp.

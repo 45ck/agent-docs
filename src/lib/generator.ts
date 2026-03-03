@@ -33,6 +33,7 @@ function artifactHeader(artifact: ParsedArtifact, config: AgentDocsConfig): stri
     }
   }
   if (artifact.dependsOn.length > 0) rows.push(`dependsOn: ${artifact.dependsOn.join(', ')}`);
+  if (artifact.references.length > 0) rows.push(`references: ${artifact.references.join(', ')}`);
   if (artifact.supersedes.length > 0) rows.push(`supersedes: ${artifact.supersedes.join(', ')}`);
   if (artifact.supersededBy.length > 0) rows.push(`supersededBy: ${artifact.supersededBy.join(', ')}`);
   if (artifact.conflictsWith.length > 0) rows.push(`conflictsWith: ${artifact.conflictsWith.join(', ')}`);

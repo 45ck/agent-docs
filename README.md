@@ -91,6 +91,11 @@ Suggested package scripts for the same project:
   - markdown policy (no free markdown docs outside generated paths by default)
   - generated manifest freshness (optional via config strictness)
 - Writes JSON report to `.agent-docs/reports/check-report.json`
+- Validates optional cross-document relation policies from `.agent-docs/config.json`
+  (example: enforce `ADR` documents to reference at least one `PRD`/`SRD` via `dependsOn`,
+  ensure referenced artifact kinds are allowed, and enforce min/max counts).
+- Validates terminology consistency from `DOMAINTREE` metadata terms (configurable in
+  `terminology` config) when placeholder terms are used in titles/sections as `{{Term}}`.
 
 Options:
 
@@ -157,6 +162,35 @@ Common options:
 - `codeTraceability.requireForKinds`: document kinds that require mappings when strict traceability is on
 - `codeTraceability.ignorePaths`: paths to ignore when validating code references
 - `kindDefaults`: per-kind valid status lists and required conventions
+- `references`: optional cross-document relation rules and target kind constraints
+- `terminology`: optional terminology validation using source-kind metadata and `{{term}}` usage checks
+
+Example cross-document policy:
+
+```json
+{
+  "references": {
+    "enabled": true,
+    "rules": [
+      {
+        "sourceKinds": ["ADR"],
+        "field": "dependsOn",
+        "requiredTargetKinds": ["PRD", "SRD"],
+        "requiredTargetMinCount": 1
+      }
+    ]
+  },
+  "terminology": {
+    "enabled": true,
+    "sourceKinds": ["DOMAINTREE"],
+    "termMetadataKeys": ["terms"],
+    "aliasMetadataKey": "termAliases",
+    "termRegex": "\\{\\{\\s*([^}]+?)\\s*\\}\\}",
+    "includeSectionBodies": true,
+    "unknownTermSeverity": "warning"
+  }
+}
+```
 
 ## Contributing
 
