@@ -1,0 +1,70 @@
+{
+  "name": "@45ck/agent-docs",
+  "version": "0.3.0",
+  "description": "Canonical agent-docs package for structured planning artifacts and markdown governance",
+  "private": false,
+  "type": "module",
+  "homepage": "https://github.com/45ck/agent-docs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/45ck/agent-docs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/45ck/agent-docs/issues"
+  },
+  "keywords": ["documentation", "governance", "planning", "agent", "markdown", "structure", "adr", "open-source", "quality-gates"],
+  "license": "MIT",
+  "author": "45ck",
+  "bin": {
+    "agent-docs": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "templates",
+    ".agent-docs",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "prepublishOnly": "npm run build",
+    "build": "tsc -p tsconfig.json",
+    "check": "node dist/index.js check",
+    "generate": "node dist/index.js generate",
+    "doctor": "node dist/index.js doctor",
+    "init": "node dist/index.js init",
+    "install-gates": "node dist/index.js install-gates",
+    "test": "node --test dist/test/*.test.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@45ck/noslop": "^1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@45ck/noslop": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "@toon-format/toon": "^2.1.0",
+    "commander": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2"
+  }
+}

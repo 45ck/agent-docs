@@ -1,0 +1,24 @@
+{
+  "id": "POLICY-000",
+  "kind": "POLICY",
+  "title": "Policy Template",
+  "status": "draft",
+  "scope": "platform",
+  "owner": "Governance",
+  "date": "2026-03-03",
+  "tags": ["policy", "governance"],
+  "dependsOn": [],
+  "supersedes": [],
+  "supersededBy": [],
+  "conflictsWith": [],
+  "sections": [
+    {
+      "title": "Policy Statement",
+      "body": "Define the rule and who it applies to."
+    },
+    {
+      "title": "Compliance",
+      "body": "Define evidence and audit expectations."
+    }
+  ]
+}

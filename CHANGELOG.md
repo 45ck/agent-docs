@@ -1,0 +1,17 @@
+# Changelog
+
+## 0.3.0
+
+- Bump package to a reusable release version and align CLI versioning.
+- Add optional `install-gates --quality` to run `noslop` checks when available.
+- Generate quality-gate-friendly hooks with optional `RUN_NOSLOP_CHECKS=1` fallback.
+- Improve generation behavior for `--format toon` to always emit `index.toon`.
+- Add peer support for optional `@45ck/noslop@^1.0.0` integrations.
+
+## 0.2.0
+
+- Initial OSS implementation of structured artifact validation and generation.
+- Add CLI commands: `init`, `check`, `generate`, `doctor`, `install-gates`.
+- Add strict markdown policy checks (deny/unapproved markdown sources by default).
+- Add TOON output generation through `@toon-format/toon`.
+- Add manifest-based stale generation checks.

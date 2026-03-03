@@ -1,0 +1,4 @@
+node_modules
+dist
+coverage
+.agent-docs/reports/check-report.json
