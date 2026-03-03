@@ -13,6 +13,7 @@
   "supersedes": [],
   "supersededBy": [],
   "conflictsWith": [],
+  "specRefs": [],
   "metadata": {
     "terms": ["task", "notes", "priority", "dueDate", "completed", "overdue", "tag", "story"]
   },

@@ -12,7 +12,9 @@ references[0]:
 supersedes[0]:
 supersededBy[0]:
 conflictsWith[0]:
+specRefs[0]:
 sections[3]{title,body}:
   Actors,Identify the actor and their goals.
   Steps,Document each step in the journey with preconditions and expected outcomes.
   Exceptions,Capture known error/exception flows and fallback handling.
+

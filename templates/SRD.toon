@@ -12,6 +12,8 @@ references[0]:
 supersedes[0]:
 supersededBy[0]:
 conflictsWith[0]:
+specRefs[0]:
 sections[2]{title,body}:
   Functional Requirements,Document expected feature behavior and API-level contracts.
   Non-Functional Requirements,"Document performance, security, and reliability requirements."
+

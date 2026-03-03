@@ -6,11 +6,18 @@ import type { AgentDocsConfig } from './types.js';
 const DEFAULT_IGNORE: string[] = [
   'node_modules',
   '.git',
+  '.beads',
+  '.claude',
+  '.husky',
+  '.vscode',
   'dist',
   'coverage',
   '.agent-docs',
+  '.githooks',
+  '.idea',
   'generated',
   'docs/generated',
+  'reports',
 ];
 
 export const DEFAULT_CONFIG: Omit<AgentDocsConfig, 'version'> = {
@@ -74,12 +81,25 @@ export const DEFAULT_CONFIG: Omit<AgentDocsConfig, 'version'> = {
   codeTraceability: {
     requireForKinds: ['ADR', 'PRD', 'SRD', 'JOURNEY', 'POLICY', 'DOMAINTREE', 'OTHER'],
     allowedExtensions: ['*'],
-    ignorePaths: ['node_modules', 'dist', 'coverage', '.agent-docs', 'generated'],
+    ignorePaths: [
+      'node_modules',
+      'dist',
+      'coverage',
+      '.agent-docs',
+      '.beads',
+      '.claude',
+      '.githooks',
+      '.husky',
+      '.vscode',
+      '.idea',
+      'generated',
+      'reports',
+    ],
   },
   reportPath: '.agent-docs/reports/check-report.json',
   hooks: {
-    preCommitPath: '.githooks/pre-commit',
-    prePushPath: '.githooks/pre-push',
+    preCommitPath: '.agent-docs/hooks/pre-commit',
+    prePushPath: '.agent-docs/hooks/pre-push',
     installGitHooks: false,
   },
 };

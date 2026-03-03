@@ -21,8 +21,12 @@ export async function runInstallGates(
   const preCommitContent = generateHookScripts({ useNoslop, runContracts, isPrePush: false });
   const prePushContent = generateHookScripts({ useNoslop, runContracts, isPrePush: true });
 
-  await writeText(preCommitTarget, preCommitContent);
-  await writeText(prePushTarget, prePushContent);
+  if (preCommitTarget === prePushTarget) {
+    await writeText(preCommitTarget, preCommitContent);
+  } else {
+    await writeText(preCommitTarget, preCommitContent);
+    await writeText(prePushTarget, prePushContent);
+  }
 
   if (useCoreHooksPath) {
     const hooksDirectory = path.join(resolved, '.agent-docs', 'hooks');
@@ -40,7 +44,7 @@ export async function runInstallGates(
       await execGitCommand(['config', 'core.hooksPath', '.agent-docs/hooks'], resolved);
       console.log('Configured git core.hooksPath to .agent-docs/hooks');
     } else {
-      console.log('No .git folder found; wrote hook scripts at .githooks only.');
+      console.log('No .git folder found; wrote hook scripts to local hook paths only.');
     }
   }
 

@@ -12,8 +12,10 @@ references[0]:
 supersedes[0]:
 supersededBy[0]:
 conflictsWith[0]:
+specRefs[0]:
 sections[4]{title,body}:
   Context,"State the problem, constraints, and decision drivers."
   Decision,Describe the selected approach and rationale.
   Alternatives,List rejected alternatives and why they were rejected.
   Consequences,Describe operational and implementation impacts.
+

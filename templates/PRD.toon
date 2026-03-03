@@ -12,7 +12,9 @@ references[0]:
 supersedes[0]:
 supersededBy[0]:
 conflictsWith[0]:
+specRefs[0]:
 sections[3]{title,body}:
   Problem Statement,Describe the user problem and why it matters.
   Success Criteria,Define measurable goals and acceptance criteria.
   Scope,List in-scope and out-of-scope items.
+

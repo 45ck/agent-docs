@@ -5,7 +5,7 @@ format that is safe for AI agents and CI.
 
 It is intentionally strict about source format:
 
-- Source documents are TOON-based `.toon` files by default (`.a-doc` is supported for legacy docs).
+- Source documents are TOON-based `.toon` files by default.
 - Markdown is treated as generated output only (by default).
 - Validation enforces references, status consistency, conflict symmetry, optional contradiction matrices, and optional code traceability mappings.
 - Optional Beads check validates `.beads/issues.jsonl` records when enabled (IDs, status, and blocker links).
@@ -32,11 +32,20 @@ agent-docs generate --format both
 `agent-docs init` creates/refreshes:
 
 - `.agent-docs/config.json`
-- `.agent-docs/templates/*.toon` (starter documents; `.a-doc` starter templates kept for legacy compatibility)
+- `.agent-docs/templates/*.{toon,a-doc}` (starter documents)
 - `.agent-docs/hooks/pre-commit` and `.agent-docs/hooks/pre-push` templates
 - `docs/PLAN.toon` starter plan if not already present
+- `docs:check` and `docs:generate` scripts in `package.json` when present
 
 ## Command reference
+
+### Markdown policy
+
+`markdownPolicy.mode` controls how markdown outside allowed generated paths is handled:
+
+- `deny` (default): fail checks.
+- `warn`: report warnings only.
+- `allow`: ignore markdown policy checks.
 
 ### `agent-docs contracts [check|generate] [root]`
 
@@ -68,6 +77,19 @@ Example multi-language config:
   }
 }
 ```
+
+## Spec references
+
+Use `specRefs` in an artifact for reverse links to issue trackers or planning systems:
+
+```toonsnippet
+specRefs[0]: AD-101
+specRefs[1]: BEAD-9001
+```
+
+`specRefs` is optional and can be any identifier you use for external issue systems.
+
+Copy `.agent-docs/templates/vscode-settings.json` to `.vscode/settings.json` for minimal TOON editor hints.
 
 Suggested package scripts for the same project:
 
@@ -145,6 +167,8 @@ Options:
 - `--force` overwrite existing local hook files in `.agent-docs/hooks`
 - `--quality` run optional noslop checks in installed hooks
 
+Copy `templates/agent-docs-ci.yml` to `.github/workflows/agent-docs.yml` to get a ready `docs:check` CI job.
+
 Project peer dependency note: for repo-wide quality support, use this package with
 `@45ck/noslop@1.0.0` when available.
 
@@ -157,6 +181,7 @@ Common options:
 - `sourceExtension`: file extension for source artifacts (default `.toon`)
 - `sourceRoots`: directories searched for source docs
 - `markdownPolicy.mode`: `deny` (default), `warn`, `allow`
+- `ignorePaths`: directories to skip during scans. Add `.beads`, `.claude`, `.githooks`, `.husky`, `.vscode`, `.idea`, `reports` to reduce noise from tooling folders.
 - `codeTraceability.allowedExtensions`: if `['*']` then all file extensions are accepted for code mappings (`*` is useful for Java, C#, Rust, PHP, Kotlin, etc.)
 - `generated.markdownRoot`: output folder for generated markdown (`generated`)
 - `strict.requireGeneratedFreshness`: require manifest and source hash parity

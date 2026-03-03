@@ -12,6 +12,8 @@ references[0]:
 supersedes[0]:
 supersededBy[0]:
 conflictsWith[0]:
+specRefs[0]:
 sections[2]{title,body}:
   Objective,Capture initial project goals and constraints before adding implementation details.
   Status,Draft
+

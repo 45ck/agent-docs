@@ -13,6 +13,7 @@
   "supersedes": [],
   "supersededBy": [],
   "conflictsWith": [],
+  "specRefs": [],
   "sections": [
     {
       "title": "Objective",

@@ -102,6 +102,7 @@ export interface ArtifactInput {
   supersededBy?: string[];
   conflictsWith?: string[];
   references?: string[];
+  specRefs?: unknown;
   canonicalKey?: string;
   tags?: string[];
   sections?: ArtifactSection[];
@@ -124,6 +125,7 @@ export interface ParsedArtifact {
   supersededBy: string[];
   conflictsWith: string[];
   references: string[];
+  specRefs: string[];
   canonicalKey?: string;
   tags: string[];
   sections: ArtifactSection[];

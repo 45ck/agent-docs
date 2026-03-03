@@ -32,6 +32,9 @@ function artifactHeader(artifact: ParsedArtifact, config: AgentDocsConfig): stri
       rows.push(`implements[${index}]: ${ref.path}${symbolSuffix}`);
     }
   }
+  if (artifact.specRefs.length > 0) {
+    rows.push(`specRefs: ${artifact.specRefs.join(', ')}`);
+  }
   if (artifact.dependsOn.length > 0) rows.push(`dependsOn: ${artifact.dependsOn.join(', ')}`);
   if (artifact.references.length > 0) rows.push(`references: ${artifact.references.join(', ')}`);
   if (artifact.supersedes.length > 0) rows.push(`supersedes: ${artifact.supersedes.join(', ')}`);

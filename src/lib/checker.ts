@@ -1141,6 +1141,7 @@ function normalizeArtifact(
     conflictsWith: uniqueList(input.conflictsWith),
     canonicalKey: input.canonicalKey ? String(input.canonicalKey).trim() : undefined,
     tags: uniqueList(input.tags),
+    specRefs: normalizeStringList(input.specRefs),
     sections: normalizeSections(input.sections ?? []),
     raw: input,
   } satisfies ParsedArtifact;
@@ -1340,6 +1341,22 @@ function uniqueList(value: unknown): string[] {
     .map((entry) => String(entry ?? '').trim())
     .filter(Boolean);
   return [...new Set(normalized)];
+}
+
+function normalizeStringList(value: unknown): string[] {
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .filter((entry, index, all) => all.indexOf(entry) === index);
+  }
+
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    return [];
+  }
+
+  return uniqueList(value);
 }
 
 function validateReferenceField(

@@ -44,11 +44,50 @@ export async function runInit(root: string): Promise<void> {
     await writeText(samplePlan, sample);
   }
 
+  await ensureDocsScripts(target);
+
   const hookScript = await fs
     .readFile(path.join(hookDestination, 'README.md'), 'utf8')
     .catch(() => '');
   if (!hookScript) {
     await writeText(path.join(hookDestination, 'README.md'), readmeForHooks());
+  }
+}
+
+async function ensureDocsScripts(target: string): Promise<void> {
+  const packageJsonPath = path.join(target, 'package.json');
+  const raw = await fs.readFile(packageJsonPath, 'utf8').catch(() => null);
+  if (!raw) {
+    return;
+  }
+
+  let packageConfig: Record<string, unknown>;
+  try {
+    packageConfig = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return;
+  }
+
+  const scripts = packageConfig.scripts;
+  if (!scripts || typeof scripts !== 'object' || scripts === null) {
+    return;
+  }
+
+  let changed = false;
+  if (typeof (scripts as Record<string, unknown>)['docs:check'] !== 'string') {
+    (scripts as Record<string, unknown>)['docs:check'] = 'agent-docs check';
+    changed = true;
+  }
+  if (typeof (scripts as Record<string, unknown>)['docs:generate'] !== 'string') {
+    (scripts as Record<string, unknown>)['docs:generate'] = 'agent-docs generate --format both';
+    changed = true;
+  }
+
+  if (changed) {
+    await writeText(packageJsonPath, `${JSON.stringify(packageConfig, null, 2)}\n`);
+    console.log('Added docs scripts to package.json:');
+    console.log('  - docs:check');
+    console.log('  - docs:generate');
   }
 }
 

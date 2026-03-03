@@ -72,7 +72,10 @@ export async function runCheck(options: CheckPlanOptions): Promise<CheckResult> 
   if (hasErrors || hasWarnings) {
     console.error(formatReport(report));
   } else {
-    console.log(`✅ Check passed with ${report.totals.filesChecked} files and ${report.totals.docsChecked} docs`);
+    console.log(
+      `✅ Check passed: ${report.totals.documentsChecked} artifacts, `
+      + `${report.totals.docsChecked} markdown docs, ${report.totals.filesChecked} files checked`,
+    );
   }
 
   return {

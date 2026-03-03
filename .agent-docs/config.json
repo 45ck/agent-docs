@@ -5,10 +5,18 @@
   "ignorePaths": [
     "node_modules",
     ".git",
+    ".beads",
+    ".claude",
+    ".husky",
+    ".vscode",
     "dist",
     "coverage",
+    "generated",
+    ".agent-docs",
+    ".githooks",
+    ".idea",
     ".agent-docs/reports",
-    "example/generated"
+    "example/README.md"
   ],
   "generated": {
     "markdownRoot": "generated",
@@ -22,14 +30,12 @@
     "allowInGeneratedPaths": [
       "generated",
       "docs/generated",
-      "example/generated",
       "README.md",
-      "CHANGELOG.md",
-      "example/README.md"
+      "CHANGELOG.md"
     ]
   },
   "kindDefaults": {
-    "ADR": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
+    "ADR": { "requiredStatus": ["accepted", "draft", "proposed", "superseded", "rejected", "deprecated", "deferred", "open"] },
     "PRD": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
     "SRD": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
     "JOURNEY": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
@@ -75,7 +81,7 @@
   "codeTraceability": {
     "requireForKinds": ["ADR", "PRD", "SRD", "JOURNEY", "POLICY", "DOMAINTREE", "OTHER"],
     "allowedExtensions": ["*"],
-    "ignorePaths": ["node_modules", "dist", "coverage", ".agent-docs", "generated", "example/generated"]
+    "ignorePaths": ["node_modules", "dist", "coverage", ".agent-docs", ".beads", ".claude", ".githooks", ".husky", ".vscode", ".idea", "generated", "reports"]
   },
   "reportPath": ".agent-docs/reports/check-report.json",
   "hooks": {
