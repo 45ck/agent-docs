@@ -17,7 +17,7 @@ This example demonstrates how to use @45ck/agent-docs in a real project.
 ## Quick start
 
 ```bash
-cd examples/todo-app
+cd example
 npm install
 npm run dev
 ```
@@ -34,6 +34,6 @@ To run against this project from the monorepo root:
 
 ```bash
 cd C:\Projects\agent-docs
-node dist/index.js check examples/todo-app --strict
-node dist/index.js generate examples/todo-app --format both
+node dist/index.js check example --strict
+node dist/index.js generate example --format both
 ```
