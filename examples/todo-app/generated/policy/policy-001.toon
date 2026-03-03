@@ -1,0 +1,27 @@
+meta:
+  id: POLICY-001
+  kind: POLICY
+  title: Documentation Policy for Todo App Example
+  status: draft
+  path: docs/POLICY-001.toon
+  generatedAt: "2026-03-03T02:20:35.417Z"
+content:
+  id: POLICY-001
+  kind: POLICY
+  title: Documentation Policy for Todo App Example
+  status: draft
+  scope: app
+  owner: Documentation
+  date: 2026-03-03
+  canonicalKey: todo-app-policy
+  tags[2]: policy,governance
+  dependsOn[1]: PLAN-001
+  supersedes[0]:
+  supersededBy[0]:
+  conflictsWith[0]:
+  sections[5]{title,body}:
+    Markdown Governance,Only generated markdown under generated is allowed as source documentation and other markdown files are prohibited.
+    Review Process,Document changes in .toon first then generate docs and run strict checks before merge.
+    Contradiction Tracking,Use a contradiction matrix when decisions conflict unresolved risks must stay visible.
+    Quality Gates,Minimum check is agent-docs check strict and generation freshness checks should pass in CI.
+    Versioning,Commit source docs and generated outputs together so requirements trail can be traced through history.

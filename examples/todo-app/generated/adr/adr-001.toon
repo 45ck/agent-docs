@@ -1,0 +1,26 @@
+meta:
+  id: ADR-001
+  kind: ADR
+  title: "ADR-001: Why this example uses React and TOON-first documentation"
+  status: accepted
+  path: docs/ADR-001.toon
+  generatedAt: "2026-03-03T02:20:35.410Z"
+content:
+  id: ADR-001
+  kind: ADR
+  title: "ADR-001: Why this example uses React and TOON-first documentation"
+  status: accepted
+  scope: app
+  owner: Architecture
+  date: 2026-03-03
+  canonicalKey: todo-app-adr-frontend
+  tags[3]: decision,frontend,docs
+  dependsOn[1]: DOMAINTREE-001
+  supersedes[0]:
+  supersededBy[0]:
+  conflictsWith[0]:
+  sections[4]{title,body}:
+    Context,The example must be obvious to a broad audience and quick to run while demonstrating planning artifacts.
+    Decision,Use React with TypeScript and Vite for familiarity and local state with all documentation in .toon.
+    Alternatives,Plain JavaScript was rejected for weaker typing and higher onboarding cost with no clear benefit.
+    Consequences,The stack is approachable and demonstrates the workflow but lacks backend persistence.

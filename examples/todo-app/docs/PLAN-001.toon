@@ -1,0 +1,19 @@
+id: PLAN-001
+kind: PLAN
+title: Agent Docs React Todo Example Plan
+status: accepted
+scope: app
+owner: Product & Docs Team
+date: 2026-03-03
+canonicalKey: todo-app-plan
+tags[4]: demo,example,docs,planning
+dependsOn[0]:
+supersedes[0]:
+supersededBy[0]:
+conflictsWith[0]:
+sections[5]{title,body}:
+  Vision,Demonstrate the library with an end-to-end example usable as a reference for agents and developers.
+  Objectives,Show a React TypeScript todo manager while enforcing structured docs for requirements and design.
+  NonGoals,No backend service and no authentication are included in this example; external integrations remain out-of-scope.
+  Success Indicators,Users can run the app locally run docs checks and generation and map decisions to artifacts.
+  Rollout Steps,Create source docs first then wire UI implementation with checks and package validation.

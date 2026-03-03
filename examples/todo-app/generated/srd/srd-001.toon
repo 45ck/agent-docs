@@ -1,0 +1,29 @@
+meta:
+  id: SRD-001
+  kind: SRD
+  title: System Requirements for the To-Do Example
+  status: accepted
+  path: docs/SRD-001.toon
+  generatedAt: "2026-03-03T02:20:35.420Z"
+content:
+  id: SRD-001
+  kind: SRD
+  title: System Requirements for the To-Do Example
+  status: accepted
+  scope: app
+  owner: Engineering
+  date: 2026-03-03
+  canonicalKey: todo-app-srd
+  tags[3]: frontend,architecture,spec
+  dependsOn[1]: PRD-001
+  supersedes[0]:
+  supersededBy[0]:
+  conflictsWith[0]:
+  sections[7]{title,body}:
+    Architecture Overview,Single-page React app with TypeScript and Vite with state in localStorage for zero backend setup.
+    State Model,Each task stores id title notes priority completed dueDate tags and createdAt.
+    Data Flow,React component state drives UI and persistence writes every mutation directly to localStorage.
+    Filtering Model,Filters include all active completed overdue and high priority plus text search.
+    Documentation Flow,All planning and design docs are authored in .toon files under docs and generated outputs are written to generated.
+    Tooling,Node 22 React 18 Vite 5 TypeScript 5 plus the local agent-docs CLI package.
+    Limitations,No authentication no multi-user sync and no backend API. This keeps setup light and focused on documentation workflow.

@@ -1,0 +1,20 @@
+id: PRD-001
+kind: PRD
+title: Product Requirements for React To-Do Demonstration
+status: accepted
+scope: app
+owner: Product
+date: 2026-03-03
+canonicalKey: todo-app-prd
+tags[3]: demo,frontend,requirements
+dependsOn[1]: PLAN-001
+supersedes[0]:
+supersededBy[0]:
+conflictsWith[0]:
+sections[6]{title,body}:
+  Problem Statement,Provide a concrete runnable reference project that demonstrates structured documentation in practice without friction.
+  Target Users,Engineers PMs and AI agents need a compact sample of TOON-first development.
+  Core Features,Create update search filter complete and delete tasks with local persistence plus priority due date tags and notes.
+  Quality Rules,The project must keep markdown source files out of root paths and generate human-readable docs from TOON.
+  Non-functional Requirements,Fast local startup clear starter workflows and deterministic doc outputs for auditability.
+  Completion Criteria,Install dependencies run npm run dev and docs:check strict; generated docs are present and fresh.

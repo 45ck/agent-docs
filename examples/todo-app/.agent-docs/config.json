@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "sourceExtension": ".toon",
+  "sourceRoots": ["docs"],
+  "ignorePaths": ["node_modules", ".git", "dist", "coverage", ".agent-docs/reports", "generated"],
+  "generated": {
+    "markdownRoot": "generated",
+    "allowMdOnlyWhenGenerated": true,
+    "indexTitle": "Todo App Documentation Index",
+    "manifestPath": ".agent-docs/manifest.json",
+    "markdownHeaderPrefix": "## "
+  },
+  "markdownPolicy": {
+    "mode": "deny",
+    "allowInGeneratedPaths": ["generated", "docs/generated", "README.md"]
+  },
+  "kindDefaults": {
+    "ADR": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
+    "PRD": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
+    "SRD": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
+    "JOURNEY": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
+    "DOMAINTREE": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
+    "POLICY": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
+    "OTHER": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] }
+  },
+  "strict": {
+    "requireGeneratedFreshness": true,
+    "failOnDuplicateCanonicalKey": true,
+    "requireConflictSymmetry": true
+  },
+  "reportPath": ".agent-docs/reports/check-report.json",
+  "hooks": {
+    "preCommitPath": ".githooks/pre-commit",
+    "prePushPath": ".githooks/pre-push",
+    "installGitHooks": false
+  }
+}

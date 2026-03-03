@@ -1,0 +1,27 @@
+meta:
+  id: JOURNEY-001
+  kind: JOURNEY
+  title: User Journey for Demo To-Do App
+  status: accepted
+  path: docs/JOURNEY-001.toon
+  generatedAt: "2026-03-03T02:20:35.414Z"
+content:
+  id: JOURNEY-001
+  kind: JOURNEY
+  title: User Journey for Demo To-Do App
+  status: accepted
+  scope: app
+  owner: Experience
+  date: 2026-03-03
+  canonicalKey: todo-app-journey
+  tags[3]: onboarding,workflow,ux
+  dependsOn[1]: PRD-001
+  supersedes[0]:
+  supersededBy[0]:
+  conflictsWith[0]:
+  sections[5]{title,body}:
+    Entry,"Open the repo and run npm install then npm run docs:generate npm run docs:check and npm run dev."
+    Primary Flow,Create tasks with title priority due date tags and notes. Use filters to view active overdue and high priority work.
+    Edit and Review,Mark tasks complete reopen or remove stale items. Use search to inspect active and completed entries.
+    Documentation Workflow,Update TOON artifacts before behavior changes regenerate docs and rerun strict checks.
+    Exit,Keep generated docs clean and rerun checks after every docs or UI change.

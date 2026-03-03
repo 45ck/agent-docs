@@ -1,0 +1,63 @@
+{
+  "version": "1.0",
+  "generatedAt": "2026-03-03T02:20:35.423Z",
+  "format": "both",
+  "entries": [
+    {
+      "source": "docs/ADR-001.toon",
+      "id": "ADR-001",
+      "kind": "ADR",
+      "sourceHash": "d6a735d227c085c8f8b346c958cee004171ff83e2675382c47c3c51dc4b28b1e",
+      "generatedPath": "generated/adr/adr-001.md",
+      "generatedAt": "2026-03-03T02:20:35.410Z"
+    },
+    {
+      "source": "docs/DOMAINTREE-001.toon",
+      "id": "DOMAINTREE-001",
+      "kind": "DOMAINTREE",
+      "sourceHash": "b1d3ec2170887d3369d0a233fea056546b59f518c415c8b3abafc175e83af2f1",
+      "generatedPath": "generated/domaintree/domaintree-001.md",
+      "generatedAt": "2026-03-03T02:20:35.413Z"
+    },
+    {
+      "source": "docs/JOURNEY-001.toon",
+      "id": "JOURNEY-001",
+      "kind": "JOURNEY",
+      "sourceHash": "bb7657bf336b03b34865296b5f20a0d3e15ab8b877db46f323666c5a386ff97c",
+      "generatedPath": "generated/journey/journey-001.md",
+      "generatedAt": "2026-03-03T02:20:35.414Z"
+    },
+    {
+      "source": "docs/PLAN-001.toon",
+      "id": "PLAN-001",
+      "kind": "PLAN",
+      "sourceHash": "7de1f51b4a161d1f9e61908d42216b3beaaa9e784e2dcfed43e40ddfbb3c5fc0",
+      "generatedPath": "generated/plan/plan-001.md",
+      "generatedAt": "2026-03-03T02:20:35.416Z"
+    },
+    {
+      "source": "docs/POLICY-001.toon",
+      "id": "POLICY-001",
+      "kind": "POLICY",
+      "sourceHash": "ba87ac16a09da645d7377b0b7b3b3225f9dce743207571c82482df9fe2720fad",
+      "generatedPath": "generated/policy/policy-001.md",
+      "generatedAt": "2026-03-03T02:20:35.417Z"
+    },
+    {
+      "source": "docs/PRD-001.toon",
+      "id": "PRD-001",
+      "kind": "PRD",
+      "sourceHash": "dc20811cc31af45e98bde50db1f0707c298894be6ef873c730e83f81970b2749",
+      "generatedPath": "generated/prd/prd-001.md",
+      "generatedAt": "2026-03-03T02:20:35.418Z"
+    },
+    {
+      "source": "docs/SRD-001.toon",
+      "id": "SRD-001",
+      "kind": "SRD",
+      "sourceHash": "433f9bae4b507dec81eb5afb4abb8ae60fbdd48392956e48ff8d1c8e09159898",
+      "generatedPath": "generated/srd/srd-001.md",
+      "generatedAt": "2026-03-03T02:20:35.420Z"
+    }
+  ]
+}
