@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "docs:check": "agent-docs check --strict",
     "docs:generate": "agent-docs generate --format both",
-    "docs:doctor": "agent-docs doctor"
+    "docs:doctor": "agent-docs doctor",
+    "contracts:check": "echo \"No contract checks configured for example project\"",
+    "contracts:generate": "echo \"No contract generators configured for example project\""
   },
   "dependencies": {
     "react": "^18.3.1",

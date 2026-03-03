@@ -28,6 +28,17 @@
     "failOnDuplicateCanonicalKey": true,
     "requireConflictSymmetry": true
   },
+  "contracts": {
+    "enabled": true,
+    "check": {
+      "command": "npm run contracts:check",
+      "workingDirectory": "."
+    },
+    "generate": {
+      "command": "npm run contracts:generate",
+      "workingDirectory": "."
+    }
+  },
   "reportPath": ".agent-docs/reports/check-report.json",
   "hooks": {
     "preCommitPath": ".githooks/pre-commit",

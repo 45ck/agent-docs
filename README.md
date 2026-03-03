@@ -52,6 +52,33 @@ Examples:
 - `agent-docs contracts generate .` runs your contract generation command
 - `--strict` fails hard when no command is configured
 
+Example multi-language config:
+
+```json
+{
+  "contracts": {
+    "enabled": true,
+    "check": {
+      "command": "npm run contracts:check && dotnet test Contracts.Tests --nologo && cargo check -p contracts-lib"
+    },
+    "generate": {
+      "command": "npm run contracts:generate"
+    }
+  }
+}
+```
+
+Suggested package scripts for the same project:
+
+```json
+{
+  "scripts": {
+    "contracts:check": "buf check breaking --against .agent-docs/contracts/snapshots && npm run lint:contracts",
+    "contracts:generate": "npm run proto:gen && dotnet build Contracts.Api /t:GenerateContractClients && cargo run -p contracts-codegen"
+  }
+}
+```
+
 ### `agent-docs check [root]`
 
 - Reads config and validates:
