@@ -60,9 +60,22 @@ Priority is constrained to low medium or high. Missing dueDate disables overdue 
   "dependsOn": [
     "SRD-001"
   ],
+  "references": [],
   "supersedes": [],
   "supersededBy": [],
   "conflictsWith": [],
+  "metadata": {
+    "terms": [
+      "task",
+      "notes",
+      "priority",
+      "dueDate",
+      "completed",
+      "overdue",
+      "tag",
+      "story"
+    ]
+  },
   "sections": [
     {
       "title": "Root Entity",

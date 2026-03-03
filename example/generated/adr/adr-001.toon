@@ -4,7 +4,7 @@ meta:
   title: "ADR-001: Why this example uses React and TOON-first documentation"
   status: accepted
   path: docs/ADR-001.toon
-  generatedAt: "2026-03-03T02:20:35.410Z"
+  generatedAt: "2026-03-03T03:38:11.644Z"
 content:
   id: ADR-001
   kind: ADR

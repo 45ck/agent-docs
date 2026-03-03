@@ -2,17 +2,31 @@
   "version": "1.0",
   "sourceExtension": ".toon",
   "sourceRoots": ["docs"],
-  "ignorePaths": ["node_modules", ".git", "dist", "coverage", ".agent-docs/reports", "generated"],
+  "ignorePaths": [
+    "node_modules",
+    ".git",
+    "dist",
+    "coverage",
+    ".agent-docs/reports",
+    "example/generated"
+  ],
   "generated": {
     "markdownRoot": "generated",
     "allowMdOnlyWhenGenerated": true,
-    "indexTitle": "Todo App Documentation Index",
+    "indexTitle": "Agent Docs Index",
     "manifestPath": ".agent-docs/manifest.json",
-    "markdownHeaderPrefix": "## "
+    "markdownHeaderPrefix": "# "
   },
   "markdownPolicy": {
     "mode": "deny",
-    "allowInGeneratedPaths": ["generated", "docs/generated", "README.md"]
+    "allowInGeneratedPaths": [
+      "generated",
+      "docs/generated",
+      "example/generated",
+      "README.md",
+      "CHANGELOG.md",
+      "example/README.md"
+    ]
   },
   "kindDefaults": {
     "ADR": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
@@ -21,33 +35,22 @@
     "JOURNEY": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
     "DOMAINTREE": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
     "POLICY": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
+    "PLAN": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] },
     "OTHER": { "requiredStatus": ["accepted", "draft", "proposed", "rejected", "open"] }
   },
   "strict": {
     "requireGeneratedFreshness": true,
     "failOnDuplicateCanonicalKey": true,
-    "requireConflictSymmetry": true
+    "requireConflictSymmetry": true,
+    "requireCodeTraceability": false,
+    "requireCodeSymbols": false
   },
   "references": {
-    "enabled": true,
-    "rules": [
-      {
-        "sourceKinds": ["SRD", "PRD", "ADR", "JOURNEY"],
-        "field": "dependsOn",
-        "requiredTargetKinds": ["PLAN", "SRD", "PRD", "DOMAINTREE"],
-        "requiredTargetMinCount": 1,
-        "severity": "warning"
-      },
-      {
-        "sourceKinds": ["ADR"],
-        "field": "references",
-        "maxCount": 5,
-        "severity": "warning"
-      }
-    ]
+    "enabled": false,
+    "rules": []
   },
   "terminology": {
-    "enabled": true,
+    "enabled": false,
     "sourceKinds": ["DOMAINTREE"],
     "termMetadataKeys": ["terms"],
     "aliasMetadataKey": "termAliases",
@@ -58,20 +61,19 @@
     "unknownTermSeverity": "warning"
   },
   "contracts": {
-    "enabled": true,
-    "check": {
-      "command": "npm run contracts:check",
-      "workingDirectory": "."
-    },
-    "generate": {
-      "command": "npm run contracts:generate",
-      "workingDirectory": "."
-    }
+    "enabled": false,
+    "check": null,
+    "generate": null
+  },
+  "codeTraceability": {
+    "requireForKinds": ["ADR", "PRD", "SRD", "JOURNEY", "POLICY", "DOMAINTREE", "OTHER"],
+    "allowedExtensions": ["*"],
+    "ignorePaths": ["node_modules", "dist", "coverage", ".agent-docs", "generated", "example/generated"]
   },
   "reportPath": ".agent-docs/reports/check-report.json",
   "hooks": {
-    "preCommitPath": ".githooks/pre-commit",
-    "prePushPath": ".githooks/pre-push",
+    "preCommitPath": ".agent-docs/hooks/pre-commit",
+    "prePushPath": ".agent-docs/hooks/pre-push",
     "installGitHooks": false
   }
 }
