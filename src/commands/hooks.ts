@@ -13,9 +13,13 @@ export async function runInstallGates(
   const config = await loadConfig(resolved);
   const preCommitTarget = path.join(resolved, config.hooks.preCommitPath);
   const prePushTarget = path.join(resolved, config.hooks.prePushPath);
+  const runContracts = Boolean(
+    config.contracts?.enabled &&
+      Boolean(config.contracts.check?.command?.trim()),
+  );
 
-  const preCommitContent = generateHookScripts({ useNoslop, isPrePush: false });
-  const prePushContent = generateHookScripts({ useNoslop, isPrePush: true });
+  const preCommitContent = generateHookScripts({ useNoslop, runContracts, isPrePush: false });
+  const prePushContent = generateHookScripts({ useNoslop, runContracts, isPrePush: true });
 
   await writeText(preCommitTarget, preCommitContent);
   await writeText(prePushTarget, prePushContent);
@@ -49,7 +53,7 @@ export async function runInstallGates(
   }
 }
 
-function generateHookScripts(params: { useNoslop: boolean; isPrePush: boolean }): string {
+function generateHookScripts(params: { useNoslop: boolean; runContracts: boolean; isPrePush: boolean }): string {
   const tier = params.isPrePush ? 'slow' : 'fast';
   const lines: string[] = [
     '#!/usr/bin/env sh',
@@ -90,13 +94,34 @@ function generateHookScripts(params: { useNoslop: boolean; isPrePush: boolean })
     );
   }
 
+  if (params.runContracts) {
+    lines.push(
+      'run_contract_checks() {',
+      '  if [ -x "${ROOT_DIR}/node_modules/.bin/agent-docs" ]; then',
+      '    "${ROOT_DIR}/node_modules/.bin/agent-docs" contracts check --strict "${ROOT_DIR}"',
+      '    return $?',
+      '  elif command -v agent-docs >/dev/null 2>&1; then',
+      '    agent-docs contracts check --strict "${ROOT_DIR}"',
+      '    return $?',
+      '  elif command -v npx >/dev/null 2>&1; then',
+      '    npx --yes --quiet agent-docs contracts check --strict "${ROOT_DIR}"',
+      '    return $?',
+      '  else',
+      '    return 0',
+      '  fi',
+      '}',
+      'run_contract_checks',
+      '',
+    );
+  }
+
   lines.push(
     'if [ -x "${ROOT_DIR}/node_modules/.bin/agent-docs" ]; then',
-    '  exec "${ROOT_DIR}/node_modules/.bin/agent-docs" check --strict --root "${ROOT_DIR}"',
+    '  exec "${ROOT_DIR}/node_modules/.bin/agent-docs" check --strict "${ROOT_DIR}"',
     'elif command -v agent-docs >/dev/null 2>&1; then',
-    '  exec agent-docs check --strict --root "${ROOT_DIR}"',
+    '  exec agent-docs check --strict "${ROOT_DIR}"',
     'elif command -v npx >/dev/null 2>&1; then',
-    '  exec npx --yes --quiet agent-docs check --strict --root "${ROOT_DIR}"',
+    '  exec npx --yes --quiet agent-docs check --strict "${ROOT_DIR}"',
     'else',
     '  echo "[agent-docs] No agent-docs executable available."',
     '  exit 1',

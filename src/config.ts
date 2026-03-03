@@ -44,9 +44,14 @@ export const DEFAULT_CONFIG: Omit<AgentDocsConfig, 'version'> = {
     requireCodeTraceability: false,
     requireCodeSymbols: false,
   },
+  contracts: {
+    enabled: false,
+    check: null,
+    generate: null,
+  },
   codeTraceability: {
     requireForKinds: ['ADR', 'PRD', 'SRD', 'JOURNEY', 'POLICY', 'DOMAINTREE', 'OTHER'],
-    allowedExtensions: ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.go'],
+    allowedExtensions: ['*'],
     ignorePaths: ['node_modules', 'dist', 'coverage', '.agent-docs', 'generated'],
   },
   reportPath: '.agent-docs/reports/check-report.json',
@@ -121,6 +126,17 @@ function hydrateConfig(parsed: Partial<AgentDocsConfig> | undefined): AgentDocsC
         parsed.strict?.requireCodeTraceability ?? fallback.strict.requireCodeTraceability,
       requireCodeSymbols:
         parsed.strict?.requireCodeSymbols ?? fallback.strict.requireCodeSymbols,
+    },
+    contracts: {
+      enabled: parsed.contracts?.enabled ?? fallback.contracts.enabled,
+      check: parsed.contracts?.check ? {
+        command: parsed.contracts.check.command || '',
+        workingDirectory: parsed.contracts.check.workingDirectory ?? '.',
+      } : parsed.contracts?.check === null ? null : fallback.contracts.check,
+      generate: parsed.contracts?.generate ? {
+        command: parsed.contracts.generate.command || '',
+        workingDirectory: parsed.contracts.generate.workingDirectory ?? '.',
+      } : parsed.contracts?.generate === null ? null : fallback.contracts.generate,
     },
     codeTraceability: {
       requireForKinds:

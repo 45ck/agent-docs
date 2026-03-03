@@ -36,6 +36,17 @@ export interface CodeTraceabilityReference {
   symbols?: string[];
 }
 
+export interface ContractCommandConfig {
+  command: string;
+  workingDirectory?: string;
+}
+
+export interface ContractChecksConfig {
+  enabled: boolean;
+  check: ContractCommandConfig | null;
+  generate: ContractCommandConfig | null;
+}
+
 export interface ArtifactInput {
   id: string;
   kind: ArtifactKind | string;
@@ -153,6 +164,7 @@ export interface AgentDocsConfig {
     requireCodeTraceability: boolean;
     requireCodeSymbols: boolean;
   };
+  contracts: ContractChecksConfig;
   codeTraceability: {
     requireForKinds: string[];
     allowedExtensions: string[];
@@ -207,4 +219,15 @@ export interface GenerateOptions {
   strict: boolean;
   configPath: string;
   format: 'markdown' | 'toon';
+}
+
+export interface ContractPlanOptions {
+  root: string;
+  strict: boolean;
+}
+
+export interface ContractResult {
+  exitCode: number;
+  ran: boolean;
+  command: string | null;
 }

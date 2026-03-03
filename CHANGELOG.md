@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Add configurable contract-stage commands (`contracts.check`/`contracts.generate`) and new
+  `agent-docs contracts [check|generate]` commands for multi-language boundary workflows.
+- Add all-language code traceability support via `codeTraceability.allowedExtensions: ["*"]`.
+- Fix hook execution by passing repository root as positional argument (`agent-docs check ...`)
+  and include optional contract checks in generated hooks.
+
 ## 0.3.1
 
 - Change default source documents to `.toon`.

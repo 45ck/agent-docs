@@ -37,6 +37,21 @@ agent-docs generate --format both
 
 ## Command reference
 
+### `agent-docs contracts [check|generate] [root]`
+
+Contract-aware projects often need shared artifacts for multiple language stacks. Configure commands in `.agent-docs/config.json`:
+
+- `contracts.enabled`: enable contract-stage command execution in hooks
+- `contracts.check.command`: command that validates generated contracts
+- `contracts.generate.command`: command that regenerates contracts
+- `contracts.check.workingDirectory` / `contracts.generate.workingDirectory`: optional execution roots
+
+Examples:
+
+- `agent-docs contracts check .` runs your contract validation command
+- `agent-docs contracts generate .` runs your contract generation command
+- `--strict` fails hard when no command is configured
+
 ### `agent-docs check [root]`
 
 - Reads config and validates:
@@ -78,7 +93,8 @@ Quick environment validation for required folders and config.
 
 ### `agent-docs install-gates [root]`
 
-Installs git hooks that run `agent-docs check --strict` and optionally sets `core.hooksPath`
+Installs git hooks that run `agent-docs contracts check --strict` (when configured), optional
+`@45ck/noslop` checks, and `agent-docs check --strict`, and optionally sets `core.hooksPath`
 to `.agent-docs/hooks`.
 
 When `--quality` is supplied, hooks also attempt to run `noslop check` (fast on pre-commit, slow on pre-push) before `agent-docs check`:
@@ -106,12 +122,12 @@ Common options:
 - `sourceExtension`: file extension for source artifacts (default `.toon`)
 - `sourceRoots`: directories searched for source docs
 - `markdownPolicy.mode`: `deny` (default), `warn`, `allow`
+- `codeTraceability.allowedExtensions`: if `['*']` then all file extensions are accepted for code mappings (`*` is useful for Java, C#, Rust, PHP, Kotlin, etc.)
 - `generated.markdownRoot`: output folder for generated markdown (`generated`)
 - `strict.requireGeneratedFreshness`: require manifest and source hash parity
 - `strict.requireCodeTraceability`: require docs to declare `implements` mappings
 - `strict.requireCodeSymbols`: require symbol hints on `implements` references
 - `codeTraceability.requireForKinds`: document kinds that require mappings when strict traceability is on
-- `codeTraceability.allowedExtensions`: accepted source-file extensions for mappings
 - `codeTraceability.ignorePaths`: paths to ignore when validating code references
 - `kindDefaults`: per-kind valid status lists and required conventions
 

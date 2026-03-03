@@ -307,6 +307,7 @@ export async function evaluateCodeTraceability(
   const allowedExtensions = new Set(
     (config.codeTraceability?.allowedExtensions ?? []).map((entry) => normalizePath(entry).toLowerCase()),
   );
+  const supportsAllExtensions = allowedExtensions.size === 0 || allowedExtensions.has('*');
   const ignorePaths = new Set(normalizeIgnoreList(config.codeTraceability?.ignorePaths ?? []));
   const cache = new Map<string, string | null>();
 
@@ -344,7 +345,7 @@ export async function evaluateCodeTraceability(
         ? normalizedReference
         : path.join(root, normalizedReference);
       const extension = path.extname(absolute).toLowerCase();
-      if (allowedExtensions.size > 0 && extension && !allowedExtensions.has(extension)) {
+      if (!supportsAllExtensions && allowedExtensions.size > 0 && extension && !allowedExtensions.has(extension)) {
         collector.push({
           code: 'UNSUPPORTED_CODE_EXTENSION',
           severity: 'warning',

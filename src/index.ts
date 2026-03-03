@@ -6,6 +6,7 @@ import { runGenerate } from './commands/generate.js';
 import { runInit } from './commands/init.js';
 import { runDoctor } from './commands/doctor.js';
 import { runInstallGates } from './commands/hooks.js';
+import { runContractCheck, runContractGenerate } from './commands/contracts.js';
 
 const program = new Command();
 
@@ -27,6 +28,34 @@ program
         console.error('init failed:', error);
         process.exit(1);
       });
+  });
+
+const contractsCommand = program
+  .command('contracts')
+  .description('Run configured contract checks/generators for multi-language boundaries');
+
+contractsCommand
+  .command('check')
+  .description('Run contract check command configured in agent-docs config')
+  .argument('[root]', 'Project root', process.cwd())
+  .option('--strict', 'Fail when no command configured or command exits non-zero')
+  .action(async (root: string, options: { strict?: boolean }) => {
+    const result = await runContractCheck({ root, strict: Boolean(options.strict) });
+    if (result.exitCode !== 0) {
+      process.exit(1);
+    }
+  });
+
+contractsCommand
+  .command('generate')
+  .description('Run contract generation command configured in agent-docs config')
+  .argument('[root]', 'Project root', process.cwd())
+  .option('--strict', 'Fail when command exits non-zero')
+  .action(async (root: string, options: { strict?: boolean }) => {
+    const result = await runContractGenerate({ root, strict: Boolean(options.strict) });
+    if (result.exitCode !== 0) {
+      process.exit(1);
+    }
   });
 
 program
