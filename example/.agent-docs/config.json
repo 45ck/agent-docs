@@ -68,6 +68,13 @@
       "workingDirectory": "."
     }
   },
+  "beads": {
+    "enabled": false,
+    "file": ".beads/issues.jsonl",
+    "issueIdPattern": "^bead-\\d{4}$",
+    "allowedStatuses": ["open", "closed"],
+    "validateBlockedRefs": true
+  },
   "reportPath": ".agent-docs/reports/check-report.json",
   "hooks": {
     "preCommitPath": ".githooks/pre-commit",

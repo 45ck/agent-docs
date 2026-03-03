@@ -65,6 +65,13 @@
     "check": null,
     "generate": null
   },
+  "beads": {
+    "enabled": false,
+    "file": ".beads/issues.jsonl",
+    "issueIdPattern": "^bead-\\d{4}$",
+    "allowedStatuses": ["open", "closed"],
+    "validateBlockedRefs": true
+  },
   "codeTraceability": {
     "requireForKinds": ["ADR", "PRD", "SRD", "JOURNEY", "POLICY", "DOMAINTREE", "OTHER"],
     "allowedExtensions": ["*"],

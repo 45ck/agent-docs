@@ -49,6 +49,14 @@ export interface TerminologyValidationConfig {
   unknownTermSeverity: ValidationSeverity;
 }
 
+export interface BeadsValidationConfig {
+  enabled: boolean;
+  file: string;
+  issueIdPattern: string;
+  allowedStatuses: string[];
+  validateBlockedRefs: boolean;
+}
+
 export interface ValidationIssue {
   code: string;
   severity: ValidationSeverity;
@@ -199,6 +207,7 @@ export interface AgentDocsConfig {
   references: ReferencesValidationConfig;
   terminology: TerminologyValidationConfig;
   contracts: ContractChecksConfig;
+  beads: BeadsValidationConfig;
   codeTraceability: {
     requireForKinds: string[];
     allowedExtensions: string[];

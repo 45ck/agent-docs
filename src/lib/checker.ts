@@ -16,6 +16,8 @@ import type {
   ArtifactReferenceField,
 } from '../types.js';
 
+const DEFAULT_BEADS_ID_PATTERN = /^bead-\d{4}$/;
+
 const ALLOWED_STATUSES: Set<ArtifactStatus> = new Set<ArtifactStatus>([
   'draft',
   'proposed',
@@ -752,6 +754,177 @@ export async function evaluateMarkdownPolicy(
   }
 }
 
+export async function evaluateBeadsRegistry(
+  root: string,
+  config: AgentDocsConfig,
+  collector: Collector,
+): Promise<void> {
+  if (!config.beads?.enabled) {
+    return;
+  }
+
+  const beadsPath = path.join(root, normalizePath(config.beads.file));
+  const raw = await fs.readFile(beadsPath, 'utf8').catch(() => null);
+  if (!raw) {
+    collector.push({
+      code: 'BEADS_FILE_MISSING',
+      severity: 'error',
+      message: `Beads issue file missing: ${config.beads.file}. Add it or disable beads validation.`,
+      path: config.beads.file,
+    });
+    return;
+  }
+
+  let idPattern: RegExp;
+  try {
+    idPattern = new RegExp(config.beads.issueIdPattern);
+  } catch {
+    collector.push({
+      code: 'BEADS_INVALID_ID_PATTERN',
+      severity: 'warning',
+      message: `Invalid beads issueIdPattern "${config.beads.issueIdPattern}". Falling back to ${DEFAULT_BEADS_ID_PATTERN.toString()}.`,
+      path: config.beads.file,
+    });
+    idPattern = DEFAULT_BEADS_ID_PATTERN;
+  }
+
+  const allowedStatuses = new Set(
+    (config.beads.allowedStatuses ?? ['open', 'closed']).map((status) => String(status ?? '').trim().toLowerCase()),
+  );
+  const recordsById = new Map<string, number>();
+  const blockedRefs = new Map<string, string[]>();
+
+  const lines = raw.split('\n');
+  for (let i = 0; i < lines.length; i += 1) {
+    const lineNo = i + 1;
+    const trimmed = lines[i]?.trim();
+    if (!trimmed) {
+      continue;
+    }
+
+    let payload: unknown;
+    try {
+      payload = JSON.parse(trimmed);
+    } catch {
+      collector.push({
+        code: 'BEADS_INVALID_JSON',
+        severity: 'error',
+        message: `Invalid JSON in ${config.beads.file} at line ${lineNo}`,
+        path: `${config.beads.file}:${lineNo}`,
+      });
+      continue;
+    }
+
+    if (!payload || typeof payload !== 'object') {
+      collector.push({
+        code: 'BEADS_INVALID_RECORD',
+        severity: 'error',
+        message: `Beads record at line ${lineNo} must be an object`,
+        path: `${config.beads.file}:${lineNo}`,
+      });
+      continue;
+    }
+
+    const issue = payload as Record<string, unknown>;
+    const id = parseBeadsId(issue.id);
+    if (!id) {
+      collector.push({
+        code: 'BEADS_MISSING_ID',
+        severity: 'error',
+        message: `Beads record at line ${lineNo} is missing an id`,
+        path: `${config.beads.file}:${lineNo}`,
+      });
+      continue;
+    }
+
+    if (!idPattern.test(id)) {
+      collector.push({
+        code: 'BEADS_INVALID_ID',
+        severity: 'error',
+        message: `Invalid beads id "${id}" at ${config.beads.file}:${lineNo}; expected ${idPattern.toString()}`,
+        path: `${config.beads.file}:${lineNo}`,
+      });
+    }
+
+    if (recordsById.has(id)) {
+      const priorLine = recordsById.get(id);
+      collector.push({
+        code: 'BEADS_DUPLICATE_ISSUE_ID',
+        severity: 'error',
+        message: `Duplicate beads id "${id}" at lines ${priorLine} and ${lineNo}`,
+        path: `${config.beads.file}:${lineNo}`,
+      });
+      continue;
+    }
+    recordsById.set(id, lineNo);
+
+    const status = typeof issue.status === 'string' ? issue.status.trim().toLowerCase() : '';
+    if (!status) {
+      collector.push({
+        code: 'BEADS_MISSING_STATUS',
+        severity: 'warning',
+        message: `Beads issue ${id} at ${config.beads.file}:${lineNo} is missing status`,
+        path: `${config.beads.file}:${lineNo}`,
+      });
+    } else if (!allowedStatuses.has(status)) {
+      collector.push({
+        code: 'BEADS_INVALID_STATUS',
+        severity: 'error',
+        message: `Beads issue ${id} has invalid status "${status}" at ${config.beads.file}:${lineNo}`,
+        path: `${config.beads.file}:${lineNo}`,
+      });
+    }
+
+    const blockedBy = parseBeadsStringArray(issue.blockedBy);
+    if (blockedBy === null) {
+      collector.push({
+        code: 'BEADS_INVALID_BLOCKED_BY',
+        severity: 'error',
+        message: `Beads issue ${id} at line ${lineNo} has invalid blockedBy format`,
+        path: `${config.beads.file}:${lineNo}`,
+      });
+      continue;
+    }
+
+    blockedRefs.set(id, blockedBy);
+    for (const blockedId of blockedBy) {
+      if (blockedId === id) {
+        collector.push({
+          code: 'BEADS_SELF_BLOCK',
+          severity: 'error',
+          message: `Beads issue ${id} blocks itself at ${config.beads.file}:${lineNo}`,
+          path: `${config.beads.file}:${lineNo}`,
+        });
+      }
+      if (!idPattern.test(blockedId)) {
+        collector.push({
+          code: 'BEADS_INVALID_BLOCKED_ID',
+          severity: 'error',
+          message: `Beads issue ${id} references invalid blocked id "${blockedId}" at ${config.beads.file}:${lineNo}`,
+          path: `${config.beads.file}:${lineNo}`,
+        });
+      }
+    }
+  }
+
+  if (!config.beads.validateBlockedRefs) {
+    return;
+  }
+
+  for (const [id, blockedIds] of blockedRefs.entries()) {
+    for (const blockedId of blockedIds) {
+      if (!recordsById.has(blockedId)) {
+        collector.push({
+          code: 'BEADS_UNKNOWN_BLOCKED_ISSUE',
+          severity: 'error',
+          message: `Beads issue ${id} blocks unknown issue "${blockedId}"`,
+          path: config.beads.file,
+        });
+      }
+    }
+  }
+}
+
 export async function evaluateGeneratedFreshness(
   root: string,
   config: AgentDocsConfig,
@@ -1100,6 +1273,41 @@ function parseCodeReference(raw: string): CodeTraceabilityReference {
     path: pathValue.trim(),
     symbols: symbols.length > 0 ? symbols : undefined,
   };
+}
+
+function parseBeadsId(raw: unknown): string {
+  return typeof raw === 'string' ? raw.trim() : '';
+}
+
+function parseBeadsStringArray(raw: unknown): string[] | null {
+  if (raw == null) {
+    return [];
+  }
+
+  if (typeof raw === 'string') {
+    const normalized = raw
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+    return normalized.length > 0 ? normalized : [];
+  }
+
+  if (!Array.isArray(raw)) {
+    return null;
+  }
+
+  const out: string[] = [];
+  for (const entry of raw) {
+    if (typeof entry !== 'string') {
+      return null;
+    }
+    const value = entry.trim();
+    if (value) {
+      out.push(value);
+    }
+  }
+
+  return out;
 }
 
 function normalizeCodeSymbols(value: unknown): string[] {

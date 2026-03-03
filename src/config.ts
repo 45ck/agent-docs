@@ -64,6 +64,13 @@ export const DEFAULT_CONFIG: Omit<AgentDocsConfig, 'version'> = {
     check: null,
     generate: null,
   },
+  beads: {
+    enabled: false,
+    file: '.beads/issues.jsonl',
+    issueIdPattern: '^bead-\\d{4}$',
+    allowedStatuses: ['open', 'closed'],
+    validateBlockedRefs: true,
+  },
   codeTraceability: {
     requireForKinds: ['ADR', 'PRD', 'SRD', 'JOURNEY', 'POLICY', 'DOMAINTREE', 'OTHER'],
     allowedExtensions: ['*'],
@@ -179,6 +186,16 @@ function hydrateConfig(parsed: Partial<AgentDocsConfig> | undefined): AgentDocsC
         command: parsed.contracts.generate.command || '',
         workingDirectory: parsed.contracts.generate.workingDirectory ?? '.',
       } : parsed.contracts?.generate === null ? null : fallback.contracts.generate,
+    },
+    beads: {
+      enabled: parsed.beads?.enabled ?? fallback.beads.enabled,
+      file: parsed.beads?.file ?? fallback.beads.file,
+      issueIdPattern: parsed.beads?.issueIdPattern ?? fallback.beads.issueIdPattern,
+      allowedStatuses:
+        parsed.beads?.allowedStatuses && Array.isArray(parsed.beads.allowedStatuses)
+          ? parsed.beads.allowedStatuses
+          : fallback.beads.allowedStatuses,
+      validateBlockedRefs: parsed.beads?.validateBlockedRefs ?? fallback.beads.validateBlockedRefs,
     },
     codeTraceability: {
       requireForKinds:

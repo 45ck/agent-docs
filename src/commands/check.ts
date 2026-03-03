@@ -7,6 +7,7 @@ import {
   evaluateArtifactGraph,
   evaluateCodeTraceability,
   evaluateMarkdownPolicy,
+  evaluateBeadsRegistry,
   evaluateGeneratedFreshness,
   buildReport,
   Collector,
@@ -34,6 +35,7 @@ export async function runCheck(options: CheckPlanOptions): Promise<CheckResult> 
   await evaluateArtifactGraph(artifacts, config, matrix, collector);
   await evaluateCodeTraceability(root, artifacts, config, collector);
   await evaluateMarkdownPolicy(root, config, markdownFiles, collector);
+  await evaluateBeadsRegistry(root, config, collector);
 
   // Skip freshness checks if user requested non-strict run.
   if (effectiveStrict || config.strict.requireGeneratedFreshness) {
@@ -41,7 +43,7 @@ export async function runCheck(options: CheckPlanOptions): Promise<CheckResult> 
   }
 
   const report = buildReport(start, root, collector, {
-    filesChecked: artifacts.length + markdownFiles.length,
+    filesChecked: artifacts.length + markdownFiles.length + (config.beads?.enabled ? 1 : 0),
     docsChecked: markdownFiles.length,
     documentsChecked: artifacts.length,
   });

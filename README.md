@@ -8,6 +8,7 @@ It is intentionally strict about source format:
 - Source documents are TOON-based `.toon` files by default (`.a-doc` is supported for legacy docs).
 - Markdown is treated as generated output only (by default).
 - Validation enforces references, status consistency, conflict symmetry, optional contradiction matrices, and optional code traceability mappings.
+- Optional Beads check validates `.beads/issues.jsonl` records when enabled (IDs, status, and blocker links).
 - Optional generation creates human-readable markdown and/or compact TOON outputs from the source artifacts.
 
 ## Installation
@@ -96,6 +97,8 @@ Suggested package scripts for the same project:
   ensure referenced artifact kinds are allowed, and enforce min/max counts).
 - Validates terminology consistency from `DOMAINTREE` metadata terms (configurable in
   `terminology` config) when placeholder terms are used in titles/sections as `{{Term}}`.
+- Validates Beads issue records in `.beads/issues.jsonl` when `beads.enabled` is true.
+  Issues are validated for JSONL parseability, ID format, status, and `blockedBy` reference integrity.
 
 Options:
 
@@ -164,6 +167,7 @@ Common options:
 - `kindDefaults`: per-kind valid status lists and required conventions
 - `references`: optional cross-document relation rules and target kind constraints
 - `terminology`: optional terminology validation using source-kind metadata and `{{term}}` usage checks
+- `beads`: optional `.beads/issues.jsonl` checks (`enabled`, `file`, `issueIdPattern`, `allowedStatuses`, `validateBlockedRefs`)
 
 Example cross-document policy:
 
@@ -188,6 +192,13 @@ Example cross-document policy:
     "termRegex": "\\{\\{\\s*([^}]+?)\\s*\\}\\}",
     "includeSectionBodies": true,
     "unknownTermSeverity": "warning"
+  },
+  "beads": {
+    "enabled": false,
+    "file": ".beads/issues.jsonl",
+    "issueIdPattern": "^bead-\\d{4}$",
+    "allowedStatuses": ["open", "closed"],
+    "validateBlockedRefs": true
   }
 }
 ```
