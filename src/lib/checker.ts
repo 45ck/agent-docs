@@ -12,6 +12,7 @@ import type {
   GeneratedManifest,
   GeneratedManifestEntry,
   ArtifactStatus,
+  CodeTraceabilityReference,
 } from '../types.js';
 
 const ALLOWED_STATUSES: Set<ArtifactStatus> = new Set<ArtifactStatus>([
@@ -296,6 +297,112 @@ export async function evaluateArtifactGraph(
   }
 }
 
+export async function evaluateCodeTraceability(
+  root: string,
+  artifacts: ParsedArtifact[],
+  config: AgentDocsConfig,
+  collector: Collector,
+): Promise<void> {
+  const requiredKinds = new Set(config.codeTraceability?.requireForKinds ?? []);
+  const allowedExtensions = new Set(
+    (config.codeTraceability?.allowedExtensions ?? []).map((entry) => normalizePath(entry).toLowerCase()),
+  );
+  const ignorePaths = new Set(normalizeIgnoreList(config.codeTraceability?.ignorePaths ?? []));
+  const cache = new Map<string, string | null>();
+
+  for (const artifact of artifacts) {
+    const requiresMapping = config.strict.requireCodeTraceability
+      && (requiredKinds.size === 0 || requiredKinds.has('*') || requiredKinds.has(artifact.kind));
+
+    if (!requiresMapping && artifact.implements.length === 0) {
+      continue;
+    }
+
+    if (requiresMapping && artifact.implements.length === 0) {
+      collector.push({
+        code: 'MISSING_CODE_MAPPING',
+        severity: 'error',
+        message: `${artifact.id} must declare code mappings when strict code traceability is enabled`,
+        path: artifact.path,
+      });
+      continue;
+    }
+
+    for (const ref of artifact.implements) {
+      if (!ref.path) {
+        collector.push({
+          code: 'INVALID_CODE_REFERENCE',
+          severity: 'error',
+          message: `${artifact.id} has an empty code reference`,
+          path: artifact.path,
+        });
+        continue;
+      }
+
+      const normalizedReference = normalizePath(ref.path);
+      const absolute = path.isAbsolute(normalizedReference)
+        ? normalizedReference
+        : path.join(root, normalizedReference);
+      const extension = path.extname(absolute).toLowerCase();
+      if (allowedExtensions.size > 0 && extension && !allowedExtensions.has(extension)) {
+        collector.push({
+          code: 'UNSUPPORTED_CODE_EXTENSION',
+          severity: 'warning',
+          message: `${artifact.id} references ${normalizedReference}, which has unsupported extension ${extension}`,
+          path: artifact.path,
+        });
+      }
+
+      if (shouldIgnore(normalizedReference, ignorePaths)) {
+        collector.push({
+          code: 'IGNORED_CODE_REFERENCE',
+          severity: 'warning',
+          message: `${artifact.id} references ignored path ${normalizedReference}`,
+          path: artifact.path,
+        });
+      }
+
+      if (!cache.has(absolute)) {
+        const content = await fs.readFile(absolute, 'utf8').catch(() => null);
+        cache.set(absolute, content);
+      }
+      const source = cache.get(absolute);
+      if (!source) {
+        collector.push({
+          code: 'MISSING_CODE_REFERENCE',
+          severity: 'error',
+          message: `Code reference ${normalizedReference} does not exist for ${artifact.id}`,
+          path: artifact.path,
+        });
+        continue;
+      }
+
+      if (config.strict.requireCodeSymbols && ref.symbols && ref.symbols.length > 0) {
+        for (const symbol of ref.symbols) {
+          if (!symbol) {
+            continue;
+          }
+          if (!source.includes(symbol)) {
+            collector.push({
+              code: 'MISSING_CODE_SYMBOL',
+              severity: 'warning',
+              message: `${artifact.id} references symbol "${symbol}" but it was not found in ${normalizedReference}`,
+              path: artifact.path,
+            });
+          }
+        }
+      } else if (config.strict.requireCodeSymbols && (!ref.symbols || ref.symbols.length === 0)) {
+        collector.push({
+          code: 'MISSING_CODE_SYMBOLS',
+          severity: 'warning',
+          message: `${artifact.id} has no symbol list in code mapping for ${normalizedReference}`,
+          path: artifact.path,
+        });
+      }
+    }
+  }
+}
+
 export async function evaluateMarkdownPolicy(
   root: string,
   config: AgentDocsConfig,
@@ -535,6 +642,7 @@ function normalizeArtifact(
     scope: String(input.scope ?? 'platform').trim(),
     owner: input.owner ? String(input.owner).trim() : undefined,
     date,
+    implements: normalizeCodeReferences(file, input, collector),
     dependsOn: uniqueList(input.dependsOn),
     supersedes: uniqueList(input.supersedes),
     supersededBy: uniqueList(input.supersededBy),
@@ -577,6 +685,125 @@ function normalizeSections(raw: unknown): ParsedArtifact['sections'] {
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
 }
 
+function normalizeCodeReferences(
+  file: string,
+  input: ArtifactInput,
+  collector: Collector,
+): CodeTraceabilityReference[] {
+  const fallback = extractReferences(input.traceability, collector, file);
+  const fromTopLevel = extractReferencesFromInput(input.implements, collector, file);
+  const combined = [...fromTopLevel, ...fallback];
+  const deduped = new Map<string, Set<string>>();
+  for (const item of combined) {
+    const existing = deduped.get(item.path) ?? new Set<string>();
+    for (const symbol of item.symbols ?? []) {
+      existing.add(symbol);
+    }
+    deduped.set(item.path, existing);
+  }
+
+  return Array.from(deduped.entries())
+    .map(([pathValue, symbols]) => ({
+      path: pathValue,
+      symbols: symbols.size > 0 ? Array.from(symbols) : undefined,
+    }))
+    .sort((left, right) => left.path.localeCompare(right.path));
+}
+
+function extractReferences(
+  raw: unknown,
+  collector: Collector,
+  file: string,
+): CodeTraceabilityReference[] {
+  if (!raw) {
+    return [];
+  }
+
+  const value = (raw as { implements?: unknown }).implements;
+  return extractReferencesFromInput(value, collector, file);
+}
+
+function extractReferencesFromInput(
+  value: unknown,
+  collector: Collector,
+  file: string,
+): CodeTraceabilityReference[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((entry) => {
+    if (typeof entry === 'string') {
+      const normalized = parseCodeReference(entry);
+      if (normalized.path) {
+        return [normalized];
+      }
+      collector.push({
+        code: 'INVALID_CODE_REFERENCE',
+        severity: 'error',
+        message: `Invalid code reference in ${file}: ${entry}`,
+        path: file,
+      });
+      return [];
+    }
+
+    if (!entry || typeof entry !== 'object') {
+      collector.push({
+        code: 'INVALID_CODE_REFERENCE',
+        severity: 'error',
+        message: `Invalid code reference in ${file}: ${String(entry)}`,
+        path: file,
+      });
+      return [];
+    }
+
+    const candidate = entry as { path?: unknown; symbols?: unknown };
+    const rawPath = typeof candidate.path === 'string' ? candidate.path.trim() : '';
+    if (!rawPath) {
+      collector.push({
+        code: 'INVALID_CODE_REFERENCE',
+        severity: 'error',
+        message: `Invalid code reference object in ${file}: missing path`,
+        path: file,
+      });
+      return [];
+    }
+
+    const symbols = normalizeCodeSymbols(candidate.symbols);
+    return [{ path: rawPath, symbols }];
+  });
+}
+
+function parseCodeReference(raw: string): CodeTraceabilityReference {
+  const [pathValue, symbolsValue] = raw.split('#');
+  const symbols = symbolsValue ? normalizeCodeSymbols(symbolsValue.split(',').map((entry) => entry.trim())) : [];
+  return {
+    path: pathValue.trim(),
+    symbols: symbols.length > 0 ? symbols : undefined,
+  };
+}
+
+function normalizeCodeSymbols(value: unknown): string[] {
+  if (!value) {
+    return [];
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => String(entry ?? '').trim())
+    .filter(Boolean);
+}
+
 function uniqueList(value: unknown): string[] {
   if (!Array.isArray(value)) {
     return [];
@@ -617,9 +844,25 @@ function shouldIgnore(normalizedPath: string, ignoreSet: Set<string>): boolean {
   }
 
   const prefixSegments = normalizedPath.split('/');
-  for (let i = 1; i <= prefixSegments.length; i += 1) {
-    const prefix = prefixSegments.slice(0, i).join('/');
-    if (ignoreSet.has(prefix)) {
+  const normalizedPathWithTrailingSlash = `${normalizedPath}/`;
+
+  for (const ignoreToken of ignoreSet) {
+    const token = normalizePath(ignoreToken);
+    if (!token) {
+      continue;
+    }
+
+    if (token.includes('/')) {
+      if (normalizedPath === token || normalizedPath.startsWith(`${token}/`)) {
+        return true;
+      }
+      continue;
+    }
+
+    if (
+      prefixSegments.includes(token)
+      || normalizedPathWithTrailingSlash.includes(`/${token}/`)
+    ) {
       return true;
     }
   }

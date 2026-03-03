@@ -25,6 +25,13 @@ function artifactHeader(artifact: ParsedArtifact, config: AgentDocsConfig): stri
   if (artifact.date) rows.push(`date: ${artifact.date}`);
   if (artifact.canonicalKey) rows.push(`canonicalKey: ${artifact.canonicalKey}`);
   if (artifact.tags.length > 0) rows.push(`tags: ${artifact.tags.join(', ')}`);
+  if (artifact.implements.length > 0) {
+    for (let index = 0; index < artifact.implements.length; index += 1) {
+      const ref = artifact.implements[index];
+      const symbolSuffix = ref.symbols && ref.symbols.length > 0 ? `#${ref.symbols.join(',')}` : '';
+      rows.push(`implements[${index}]: ${ref.path}${symbolSuffix}`);
+    }
+  }
   if (artifact.dependsOn.length > 0) rows.push(`dependsOn: ${artifact.dependsOn.join(', ')}`);
   if (artifact.supersedes.length > 0) rows.push(`supersedes: ${artifact.supersedes.join(', ')}`);
   if (artifact.supersededBy.length > 0) rows.push(`supersededBy: ${artifact.supersededBy.join(', ')}`);

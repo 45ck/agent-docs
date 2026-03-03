@@ -7,7 +7,7 @@ It is intentionally strict about source format:
 
 - Source documents are TOON-based `.toon` files by default (`.a-doc` is supported for legacy docs).
 - Markdown is treated as generated output only (by default).
-- Validation enforces references, status consistency, conflict symmetry, and optional contradiction matrices.
+- Validation enforces references, status consistency, conflict symmetry, optional contradiction matrices, and optional code traceability mappings.
 - Optional generation creates human-readable markdown and/or compact TOON outputs from the source artifacts.
 
 ## Installation
@@ -45,6 +45,7 @@ agent-docs generate --format both
   - status values and canonical keys
   - conflict symmetry
   - configured contradiction matrix (`.agent-docs/contradictions.json` or `.agent-docs/contradictions.toon`)
+  - code-to-repo mappings (for `implements`) when enabled in config
   - markdown policy (no free markdown docs outside generated paths by default)
   - generated manifest freshness (optional via config strictness)
 - Writes JSON report to `.agent-docs/reports/check-report.json`
@@ -107,6 +108,11 @@ Common options:
 - `markdownPolicy.mode`: `deny` (default), `warn`, `allow`
 - `generated.markdownRoot`: output folder for generated markdown (`generated`)
 - `strict.requireGeneratedFreshness`: require manifest and source hash parity
+- `strict.requireCodeTraceability`: require docs to declare `implements` mappings
+- `strict.requireCodeSymbols`: require symbol hints on `implements` references
+- `codeTraceability.requireForKinds`: document kinds that require mappings when strict traceability is on
+- `codeTraceability.allowedExtensions`: accepted source-file extensions for mappings
+- `codeTraceability.ignorePaths`: paths to ignore when validating code references
 - `kindDefaults`: per-kind valid status lists and required conventions
 
 ## Contributing

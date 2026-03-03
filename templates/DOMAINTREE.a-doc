@@ -7,6 +7,7 @@
   "owner": "Architecture",
   "date": "2026-03-03",
   "tags": ["domain", "model"],
+  "implements": [],
   "dependsOn": [],
   "supersedes": [],
   "supersededBy": [],

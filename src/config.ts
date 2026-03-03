@@ -41,6 +41,13 @@ export const DEFAULT_CONFIG: Omit<AgentDocsConfig, 'version'> = {
     requireGeneratedFreshness: true,
     failOnDuplicateCanonicalKey: true,
     requireConflictSymmetry: true,
+    requireCodeTraceability: false,
+    requireCodeSymbols: false,
+  },
+  codeTraceability: {
+    requireForKinds: ['ADR', 'PRD', 'SRD', 'JOURNEY', 'POLICY', 'DOMAINTREE', 'OTHER'],
+    allowedExtensions: ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs', '.go'],
+    ignorePaths: ['node_modules', 'dist', 'coverage', '.agent-docs', 'generated'],
   },
   reportPath: '.agent-docs/reports/check-report.json',
   hooks: {
@@ -110,6 +117,18 @@ function hydrateConfig(parsed: Partial<AgentDocsConfig> | undefined): AgentDocsC
         parsed.strict?.failOnDuplicateCanonicalKey ?? fallback.strict.failOnDuplicateCanonicalKey,
       requireConflictSymmetry:
         parsed.strict?.requireConflictSymmetry ?? fallback.strict.requireConflictSymmetry,
+      requireCodeTraceability:
+        parsed.strict?.requireCodeTraceability ?? fallback.strict.requireCodeTraceability,
+      requireCodeSymbols:
+        parsed.strict?.requireCodeSymbols ?? fallback.strict.requireCodeSymbols,
+    },
+    codeTraceability: {
+      requireForKinds:
+        parsed.codeTraceability?.requireForKinds ?? fallback.codeTraceability.requireForKinds,
+      allowedExtensions:
+        parsed.codeTraceability?.allowedExtensions ?? fallback.codeTraceability.allowedExtensions,
+      ignorePaths:
+        parsed.codeTraceability?.ignorePaths ?? fallback.codeTraceability.ignorePaths,
     },
     reportPath: parsed.reportPath ?? fallback.reportPath,
     hooks: {

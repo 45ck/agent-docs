@@ -4,6 +4,7 @@ import {
   Collector,
   readContradictionMatrix,
   evaluateArtifactGraph,
+  evaluateCodeTraceability,
   evaluateMarkdownPolicy,
   collectMarkdownFiles,
 } from '../lib/checker.js';
@@ -32,6 +33,7 @@ export async function runGenerate(options: GeneratePlanOptions): Promise<Generat
 
   const matrix = await readContradictionMatrix(root);
   await evaluateArtifactGraph(artifacts, config, matrix, collector);
+  await evaluateCodeTraceability(root, artifacts, config, collector);
 
   if (options.strict && collector.toArray().some((issue) => issue.severity !== 'info')) {
     const blockers = collector.toArray().filter((issue) => issue.severity !== 'info');

@@ -5,6 +5,7 @@ import {
   loadArtifacts,
   collectMarkdownFiles,
   evaluateArtifactGraph,
+  evaluateCodeTraceability,
   evaluateMarkdownPolicy,
   evaluateGeneratedFreshness,
   buildReport,
@@ -31,6 +32,7 @@ export async function runCheck(options: CheckPlanOptions): Promise<CheckResult> 
   const artifacts = await loadArtifacts(root, config, collector);
   const matrix = await readContradictionMatrix(root);
   await evaluateArtifactGraph(artifacts, config, matrix, collector);
+  await evaluateCodeTraceability(root, artifacts, config, collector);
   await evaluateMarkdownPolicy(root, config, markdownFiles, collector);
 
   // Skip freshness checks if user requested non-strict run.

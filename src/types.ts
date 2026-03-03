@@ -31,6 +31,11 @@ export interface ArtifactSection {
   body: string;
 }
 
+export interface CodeTraceabilityReference {
+  path: string;
+  symbols?: string[];
+}
+
 export interface ArtifactInput {
   id: string;
   kind: ArtifactKind | string;
@@ -39,6 +44,10 @@ export interface ArtifactInput {
   scope?: string;
   owner?: string;
   date?: string;
+  implements?: string[] | { path: string; symbols?: string[] }[];
+  traceability?: {
+    implements?: string[] | { path: string; symbols?: string[] }[];
+  };
   dependsOn?: string[];
   supersedes?: string[];
   supersededBy?: string[];
@@ -59,6 +68,7 @@ export interface ParsedArtifact {
   scope: string;
   owner?: string;
   date?: string;
+  implements: CodeTraceabilityReference[];
   dependsOn: string[];
   supersedes: string[];
   supersededBy: string[];
@@ -140,6 +150,13 @@ export interface AgentDocsConfig {
     requireGeneratedFreshness: boolean;
     failOnDuplicateCanonicalKey: boolean;
     requireConflictSymmetry: boolean;
+    requireCodeTraceability: boolean;
+    requireCodeSymbols: boolean;
+  };
+  codeTraceability: {
+    requireForKinds: string[];
+    allowedExtensions: string[];
+    ignorePaths: string[];
   };
   reportPath: string;
   hooks: {
