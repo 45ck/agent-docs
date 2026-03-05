@@ -61,7 +61,7 @@ function generateHookScripts(params: { useNoslop: boolean; runContracts: boolean
   const tier = params.isPrePush ? 'slow' : 'fast';
   const lines: string[] = [
     '#!/usr/bin/env sh',
-    'set -euo pipefail',
+    'set -eu',
     'if [ -n "${SKIP_AGENT_DOCS_CHECK:-}" ]; then',
     '  exit 0',
     'fi',
@@ -108,7 +108,7 @@ function generateHookScripts(params: { useNoslop: boolean; runContracts: boolean
       '    agent-docs contracts check --strict "${ROOT_DIR}"',
       '    return $?',
       '  elif command -v npx >/dev/null 2>&1; then',
-      '    npx --yes --quiet agent-docs contracts check --strict "${ROOT_DIR}"',
+      '    npx --yes --quiet @45ck/agent-docs contracts check --strict "${ROOT_DIR}"',
       '    return $?',
       '  else',
       '    return 0',
@@ -125,7 +125,7 @@ function generateHookScripts(params: { useNoslop: boolean; runContracts: boolean
     'elif command -v agent-docs >/dev/null 2>&1; then',
     '  exec agent-docs check --strict "${ROOT_DIR}"',
     'elif command -v npx >/dev/null 2>&1; then',
-    '  exec npx --yes --quiet agent-docs check --strict "${ROOT_DIR}"',
+    '  exec npx --yes --quiet @45ck/agent-docs check --strict "${ROOT_DIR}"',
     'else',
     '  echo "[agent-docs] No agent-docs executable available."',
     '  exit 1',
@@ -143,7 +143,8 @@ async function reportNoslopAvailability(root: string): Promise<void> {
   }
 
   try {
-    execSync('command -v noslop', { stdio: 'ignore' });
+    const probe = process.platform === 'win32' ? 'where noslop' : 'command -v noslop';
+    execSync(probe, { stdio: 'ignore' });
     console.log('Detected noslop in PATH');
     return;
   } catch {
