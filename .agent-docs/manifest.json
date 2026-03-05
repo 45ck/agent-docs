@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "generatedAt": "2026-03-05T21:38:25.670Z",
+  "format": "both",
+  "entries": [
+    {
+      "source": "docs/PLAN.toon",
+      "id": "PLAN-000",
+      "kind": "OTHER",
+      "sourceHash": "53637255eae526eb9d791882cc46f6a9d85a58ff249af86c993c8b60f288e886",
+      "generatedPath": "generated/other/plan-000.md",
+      "generatedAt": "2026-03-05T21:38:25.666Z"
+    }
+  ]
+}

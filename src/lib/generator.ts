@@ -172,7 +172,10 @@ export async function generateArtifacts(
       '',
     ];
     for (const artifact of artifacts) {
-      const relPath = path.join(config.generated.markdownRoot, artifact.kind.toLowerCase(), `${slugify(artifact.id)}.md`);
+      const relPath = path.relative(
+        outputRoot,
+        path.join(outputRoot, artifact.kind.toLowerCase(), `${slugify(artifact.id)}.md`),
+      );
       indexLines.push(`- [${artifact.id} — ${artifact.title}](${relPath.replace(/\\/g, '/')})`);
     }
     await writeText(indexPath, `${indexLines.join('\n')}\n`);
@@ -187,7 +190,10 @@ export async function generateArtifacts(
           kind: artifact.kind,
           title: artifact.title,
           path: normalizeRelPath(
-            path.join(config.generated.markdownRoot, artifact.kind.toLowerCase(), `${slugify(artifact.id)}.md`),
+            path.relative(
+              outputRoot,
+              path.join(outputRoot, artifact.kind.toLowerCase(), `${slugify(artifact.id)}.md`),
+            ),
           ),
         })),
       },
@@ -205,7 +211,10 @@ export async function generateArtifacts(
           kind: artifact.kind,
           title: artifact.title,
           path: normalizeRelPath(
-            path.join(config.generated.markdownRoot, artifact.kind.toLowerCase(), `${slugify(artifact.id)}.toon`),
+            path.relative(
+              outputRoot,
+              path.join(outputRoot, artifact.kind.toLowerCase(), `${slugify(artifact.id)}.toon`),
+            ),
           ),
         })),
       },

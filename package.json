@@ -7,16 +7,26 @@
   "homepage": "https://github.com/45ck/agent-docs",
   "repository": {
     "type": "git",
-    "url": "https://github.com/45ck/agent-docs.git"
+    "url": "git+https://github.com/45ck/agent-docs.git"
   },
   "bugs": {
     "url": "https://github.com/45ck/agent-docs/issues"
   },
-  "keywords": ["documentation", "governance", "planning", "agent", "markdown", "structure", "adr", "open-source", "quality-gates"],
+  "keywords": [
+    "documentation",
+    "governance",
+    "planning",
+    "agent",
+    "markdown",
+    "structure",
+    "adr",
+    "open-source",
+    "quality-gates"
+  ],
   "license": "MIT",
   "author": "45ck",
   "bin": {
-    "agent-docs": "./dist/index.js"
+    "agent-docs": "dist/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -36,6 +46,7 @@
     "CHANGELOG.md"
   ],
   "scripts": {
+    "prepare": "npm run build",
     "prepublishOnly": "npm run build",
     "build": "tsc -p tsconfig.json",
     "check": "node dist/index.js check",
@@ -66,5 +77,9 @@
   "devDependencies": {
     "@types/node": "^22.10.0",
     "typescript": "^5.7.2"
+  },
+  "directories": {
+    "doc": "docs",
+    "example": "example"
   }
 }

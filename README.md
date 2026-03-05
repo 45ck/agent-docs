@@ -17,6 +17,12 @@ It is intentionally strict about source format:
 npm install @45ck/agent-docs
 ```
 
+If you want to consume the repo before an npm release is available, install directly from GitHub:
+
+```bash
+npm install github:45ck/agent-docs
+```
+
 ## Quick start
 
 ```bash

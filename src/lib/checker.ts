@@ -102,7 +102,7 @@ export async function listFiles(root: string, includeRoots: string[], ignorePath
 }
 
 export async function collectStructuredDocs(root: string, config: AgentDocsConfig): Promise<string[]> {
-  return listFiles(root, config.sourceRoots, config.ignorePaths);
+  return listFiles(root, config.sourceRoots, filterIgnoresForSourceRoots(config.ignorePaths, config.sourceRoots));
 }
 
 export async function collectMarkdownFiles(root: string, config: AgentDocsConfig): Promise<string[]> {
@@ -1426,6 +1426,19 @@ function fileInAllowedPath(file: string, allowedRoots: Set<string>): boolean {
 
 function normalizeIgnoreList(paths: string[]): string[] {
   return paths.map((entry) => normalizePath(entry)).filter((entry) => Boolean(entry));
+}
+
+function filterIgnoresForSourceRoots(ignorePaths: string[], sourceRoots: string[]): string[] {
+  const normalizedRoots = sourceRoots.map((entry) => normalizePath(entry)).filter(Boolean);
+
+  return ignorePaths.filter((entry) => {
+    const token = normalizePath(entry);
+    if (!token) {
+      return false;
+    }
+
+    return !normalizedRoots.some((root) => root === token || root.startsWith(`${token}/`));
+  });
 }
 
 function normalizePath(filePath: string): string {
