@@ -13,14 +13,21 @@ It is intentionally strict about source format:
 
 ## Installation
 
+When a public npm release is available:
+
 ```bash
 npm install @45ck/agent-docs
 ```
 
-If you want to consume the repo before an npm release is available, install directly from GitHub:
+Until the npm package is published, install directly from GitHub or from a tarball built with `npm pack`:
 
 ```bash
 npm install github:45ck/agent-docs
+```
+
+```bash
+npm pack
+npm install ./45ck-agent-docs-<version>.tgz
 ```
 
 ## Quick start
@@ -249,3 +256,14 @@ Then generate sample outputs:
 ```bash
 npm run generate -- --format both
 ```
+
+To validate the packaged consumer path before publishing:
+
+```bash
+npm run pack:smoke
+```
+
+## Release
+
+- `quality.yml` runs build, tests, and the packed-install smoke on PRs and pushes to `master`.
+- `release.yml` repeats the same checks and publishes to npm on `v*` tags when `NPM_TOKEN` is configured.

@@ -54,7 +54,8 @@
     "doctor": "node dist/index.js doctor",
     "init": "node dist/index.js init",
     "install-gates": "node dist/index.js install-gates",
-    "test": "node --test dist/test/*.test.js"
+    "test": "node --test dist/test/*.test.js",
+    "pack:smoke": "node scripts/pack-smoke.mjs"
   },
   "publishConfig": {
     "access": "public"
