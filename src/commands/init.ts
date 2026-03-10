@@ -82,12 +82,17 @@ async function ensureDocsScripts(target: string): Promise<void> {
     (scripts as Record<string, unknown>)['docs:generate'] = 'agent-docs generate --format both';
     changed = true;
   }
+  if (typeof (scripts as Record<string, unknown>)['docs:report'] !== 'string') {
+    (scripts as Record<string, unknown>)['docs:report'] = 'agent-docs report --all';
+    changed = true;
+  }
 
   if (changed) {
     await writeText(packageJsonPath, `${JSON.stringify(packageConfig, null, 2)}\n`);
     console.log('Added docs scripts to package.json:');
     console.log('  - docs:check');
     console.log('  - docs:generate');
+    console.log('  - docs:report');
   }
 }
 

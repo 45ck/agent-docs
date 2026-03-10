@@ -15,6 +15,7 @@ import type {
   CodeTraceabilityReference,
   ArtifactReferenceField,
 } from '../types.js';
+import { KIND_METADATA_SCHEMAS } from './metadata-schemas.js';
 
 const DEFAULT_BEADS_ID_PATTERN = /^bead-\d{4}$/;
 
@@ -27,6 +28,15 @@ const ALLOWED_STATUSES: Set<ArtifactStatus> = new Set<ArtifactStatus>([
   'deprecated',
   'deferred',
   'open',
+  'blocked',
+  'passed',
+  'failed',
+  'triaged',
+  'in-progress',
+  'resolved',
+  'verified',
+  'closed',
+  'mitigated',
 ]);
 
 const CONTRADICTION_SEVERITY_ORDER: Record<'low' | 'medium' | 'high' | 'critical', number> = {
@@ -230,6 +240,7 @@ export async function evaluateArtifactGraph(
     validateReferenceField('references', artifact.references, artifact, knownIds, collector);
 
     evaluateReferenceRules(artifact, byId, config, collector);
+    evaluateKindMetadata(artifact, collector);
 
     for (const conflict of artifact.conflictsWith) {
       if (conflict === artifact.id) {
@@ -1146,16 +1157,6 @@ function normalizeArtifact(
     raw: input,
   } satisfies ParsedArtifact;
 
-  const allowedStatuses = getAllowedStatuses(normalized.kind, config);
-  if (!allowedStatuses.has(status as ArtifactStatus)) {
-    collector.push({
-      code: 'INVALID_STATUS',
-      severity: 'error',
-      message: `${id} has invalid status "${status}"`,
-      path: file,
-    });
-  }
-
   return normalized;
 }
 
@@ -1454,4 +1455,72 @@ function normalizeKind(value: string): string {
 
 function normalizeTerm(raw: string): string {
   return raw.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+export function evaluateKindMetadata(artifact: ParsedArtifact, collector: Collector): void {
+  const schema = KIND_METADATA_SCHEMAS[artifact.kind];
+  if (!schema) {
+    return;
+  }
+
+  const metadata = (artifact.raw.metadata ?? {}) as Record<string, unknown>;
+
+  for (const [field, rule] of Object.entries(schema.fields)) {
+    const value = metadata[field];
+
+    if (rule.required && (value === undefined || value === null || value === '' || (rule.type === 'string[]' && Array.isArray(value) && value.length === 0))) {
+      collector.push({
+        code: 'METADATA_REQUIRED',
+        severity: rule.severity ?? 'warning',
+        message: `${artifact.id} (${artifact.kind}) is missing required metadata field "${field}"`,
+        path: artifact.path,
+      });
+      continue;
+    }
+
+    if (value === undefined || value === null || value === '') {
+      continue;
+    }
+
+    if (rule.type === 'string' && typeof value !== 'string') {
+      collector.push({
+        code: 'METADATA_INVALID_TYPE',
+        severity: rule.severity ?? 'warning',
+        message: `${artifact.id} metadata.${field} must be a string, got ${typeof value}`,
+        path: artifact.path,
+      });
+      continue;
+    }
+
+    if (rule.type === 'number' && typeof value !== 'number') {
+      collector.push({
+        code: 'METADATA_INVALID_TYPE',
+        severity: rule.severity ?? 'warning',
+        message: `${artifact.id} metadata.${field} must be a number, got ${typeof value}`,
+        path: artifact.path,
+      });
+      continue;
+    }
+
+    if (rule.type === 'string[]' && !Array.isArray(value)) {
+      collector.push({
+        code: 'METADATA_INVALID_TYPE',
+        severity: rule.severity ?? 'warning',
+        message: `${artifact.id} metadata.${field} must be an array, got ${typeof value}`,
+        path: artifact.path,
+      });
+      continue;
+    }
+
+    if (rule.allowedValues && (rule.type === 'string' || rule.type === 'number')) {
+      if (!(rule.allowedValues as readonly (string | number)[]).includes(value as string | number)) {
+        collector.push({
+          code: 'METADATA_INVALID_ENUM',
+          severity: rule.severity ?? 'warning',
+          message: `${artifact.id} metadata.${field} value "${value}" is not in allowed values: ${rule.allowedValues.join(', ')}`,
+          path: artifact.path,
+        });
+      }
+    }
+  }
 }

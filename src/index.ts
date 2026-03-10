@@ -7,13 +7,14 @@ import { runInit } from './commands/init.js';
 import { runDoctor } from './commands/doctor.js';
 import { runInstallGates } from './commands/hooks.js';
 import { runContractCheck, runContractGenerate } from './commands/contracts.js';
+import { runReport } from './commands/report.js';
 
 const program = new Command();
 
 program
   .name('agent-docs')
   .description('Structured planning artifacts and AI-agent-safe documentation workflows')
-  .version('0.3.1');
+  .version('0.4.0');
 
 program
   .command('init')
@@ -99,6 +100,30 @@ program
   .action(async (root: string) => {
     const status = await runDoctor({ root });
     if (status !== 0) {
+      process.exit(1);
+    }
+  });
+
+program
+  .command('report')
+  .description('Generate analytical matrix reports from artifact graph')
+  .argument('[root]', 'Project root', process.cwd())
+  .option('--type <type>', 'Report type: traceability, defect, coverage, impact')
+  .option('--all', 'Generate all report types')
+  .option('--output <dir>', 'Output directory (default: generated/reports)')
+  .action(async (root: string, options: { type?: string; all?: boolean; output?: string }) => {
+    const validTypes = ['traceability', 'defect', 'coverage', 'impact'];
+    if (options.type && !validTypes.includes(options.type)) {
+      console.error(`Invalid report type "${options.type}". Valid types: ${validTypes.join(', ')}`);
+      process.exit(1);
+    }
+    const result = await runReport({
+      root,
+      type: options.type as 'traceability' | 'defect' | 'coverage' | 'impact' | undefined,
+      all: options.all,
+      output: options.output,
+    });
+    if (result.exitCode !== 0) {
       process.exit(1);
     }
   });

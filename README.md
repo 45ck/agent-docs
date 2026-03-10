@@ -157,6 +157,23 @@ Options:
 
 Initialize project structure and template artifacts.
 
+### `agent-docs report [root]`
+
+Generate analytical matrix reports from the artifact graph. Reports are written as markdown to `generated/reports/` by default.
+
+Options:
+
+- `--type <type>` generate a single report type: `traceability`, `defect`, `coverage`, or `impact`
+- `--all` generate all 4 report types (default when no `--type` is specified)
+- `--output <dir>` custom output directory
+
+Report types:
+
+- **Traceability Matrix** — Requirement (SRD/PRD) to Design (ADR/COMPONENT) to Code to Test. Shows coverage gaps.
+- **Defect Matrix** — DEFECT artifacts grouped by severity/status/component with summary tables.
+- **Coverage Matrix** — Per-requirement breakdown: has design? has code? has test? With percentage summaries.
+- **Impact Matrix** — Reverse dependency graph showing direct and transitive dependents per artifact.
+
 ### `agent-docs doctor [root]`
 
 Quick environment validation for required folders and config.
@@ -184,6 +201,38 @@ Copy `templates/agent-docs-ci.yml` to `.github/workflows/agent-docs.yml` to get 
 
 Project peer dependency note: for repo-wide quality support, use this package with
 `@45ck/noslop@1.0.0` when available.
+
+## Artifact Kinds
+
+agent-docs ships with 14 built-in artifact kinds (+ OTHER):
+
+| Kind | Purpose | Template Sections |
+|------|---------|-------------------|
+| ADR | Architecture Decision Record | Context, Decision, Alternatives, Consequences |
+| PRD | Product Requirements Document | Problem Statement, Success Criteria, Scope |
+| SRD | System Requirements Document | Functional Requirements, Non-Functional Requirements |
+| JOURNEY | User Journey Map | Actors, Steps, Exceptions |
+| DOMAINTREE | Domain Model Tree | Root Domain, Sub-Domains |
+| POLICY | Governance Policy | Policy Statement, Compliance |
+| TESTCASE | Test Specification | Preconditions, Steps, Expected Result, Postconditions |
+| DEFECT | Bug Report | Description, Steps to Reproduce, Expected vs Actual, Root Cause, Resolution |
+| RISK | Risk Register Entry | Description, Triggers, Mitigations, Contingency |
+| INTERFACE | API/Boundary Spec | Overview, Endpoints, Request/Response, Authentication, Versioning |
+| COMPONENT | Component Design | Responsibilities, Dependencies, Boundaries, Deployment |
+| RUNBOOK | Operational Playbook | Prerequisites, Steps, Rollback, Verification |
+| DECISION | Lightweight Decision Record | Context, Decision, Rationale |
+
+### Kind-Specific Metadata
+
+Some kinds require or accept metadata fields validated at check time:
+
+- **TESTCASE**: `testType` (required: unit/integration/e2e/manual/performance), `verifies` (required: artifact ID array)
+- **DEFECT**: `severity` (required: critical/high/medium/low), `priority` (optional: P0-P4), `affectedArtifacts` (optional: ID array)
+- **RISK**: `probability` (required: 1-5), `impact` (required: 1-5), `mitigations` (optional: string array)
+- **INTERFACE**: `protocol` (optional: REST/gRPC/GraphQL/event)
+- **COMPONENT**: `parentComponent` (optional: artifact ID)
+
+Metadata is placed in the `metadata` object of each artifact.
 
 ## Config
 

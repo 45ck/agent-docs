@@ -1,6 +1,6 @@
 {
   "name": "@45ck/agent-docs",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Canonical agent-docs package for structured planning artifacts and markdown governance",
   "private": false,
   "type": "module",

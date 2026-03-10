@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { loadConfig } from '../config.js';
-import { collectMarkdownFiles } from '../lib/checker.js';
+import { collectMarkdownFiles, Collector, loadArtifacts } from '../lib/checker.js';
 import type { DoctorPlanOptions } from '../types.js';
 
 export async function runDoctor(options: DoctorPlanOptions): Promise<number> {
@@ -9,8 +9,9 @@ export async function runDoctor(options: DoctorPlanOptions): Promise<number> {
   const critical: string[] = [];
   const warnings: string[] = [];
 
+  let config;
   try {
-    await loadConfig(root);
+    config = await loadConfig(root);
   } catch (error) {
     critical.push(`Unable to load configuration: ${(error as Error).message}`);
   }
@@ -21,7 +22,8 @@ export async function runDoctor(options: DoctorPlanOptions): Promise<number> {
   }
 
   try {
-    const markdownCount = (await collectMarkdownFiles(root, await loadConfig(root))).length;
+    if (!config) config = await loadConfig(root);
+    const markdownCount = (await collectMarkdownFiles(root, config)).length;
     if (markdownCount === 0) {
       warnings.push('No markdown files detected; generated docs will be produced by "agent-docs generate".');
     }
@@ -32,6 +34,22 @@ export async function runDoctor(options: DoctorPlanOptions): Promise<number> {
   const packagePath = path.join(root, 'package.json');
   if (!existsSync(packagePath)) {
     warnings.push('No package.json in repo root (optional but recommended for open source package metadata).');
+  }
+
+  if (config?.references?.enabled) {
+    try {
+      const collector = new Collector();
+      const artifacts = await loadArtifacts(root, config, collector);
+      const kinds = new Set(artifacts.map((a) => a.kind));
+      if (!kinds.has('TESTCASE') && !kinds.has('DEFECT')) {
+        warnings.push(
+          'Reference rules are enabled but no TESTCASE or DEFECT artifacts exist. '
+          + 'Create test/defect artifacts to benefit from reference validation.',
+        );
+      }
+    } catch (error) {
+      warnings.push(`Could not load artifacts for reference rule check: ${(error as Error).message}`);
+    }
   }
 
   if (critical.length > 0 || warnings.length > 0) {

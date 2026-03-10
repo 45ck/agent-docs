@@ -43,6 +43,13 @@ export const DEFAULT_CONFIG: Omit<AgentDocsConfig, 'version'> = {
     POLICY: { requiredStatus: ['accepted', 'draft', 'proposed', 'rejected', 'open'] },
     DOMAINTREE: { requiredStatus: ['accepted', 'draft', 'proposed', 'rejected', 'open'] },
     OTHER: { requiredStatus: ['accepted', 'draft', 'proposed', 'rejected', 'open'] },
+    TESTCASE: { requiredStatus: ['draft', 'proposed', 'accepted', 'blocked', 'passed', 'failed', 'deprecated'] },
+    DEFECT: { requiredStatus: ['draft', 'open', 'triaged', 'in-progress', 'resolved', 'verified', 'closed', 'rejected'] },
+    RISK: { requiredStatus: ['draft', 'open', 'mitigated', 'accepted', 'closed', 'rejected'] },
+    INTERFACE: { requiredStatus: ['draft', 'proposed', 'accepted', 'deprecated', 'superseded', 'rejected'] },
+    COMPONENT: { requiredStatus: ['draft', 'proposed', 'accepted', 'deprecated', 'superseded', 'rejected'] },
+    RUNBOOK: { requiredStatus: ['draft', 'proposed', 'accepted', 'deprecated', 'open'] },
+    DECISION: { requiredStatus: ['draft', 'proposed', 'accepted', 'superseded', 'rejected', 'deprecated'] },
   },
   strict: {
     requireGeneratedFreshness: true,
@@ -79,7 +86,7 @@ export const DEFAULT_CONFIG: Omit<AgentDocsConfig, 'version'> = {
     validateBlockedRefs: true,
   },
   codeTraceability: {
-    requireForKinds: ['ADR', 'PRD', 'SRD', 'JOURNEY', 'POLICY', 'DOMAINTREE', 'OTHER'],
+    requireForKinds: ['ADR', 'PRD', 'SRD', 'JOURNEY', 'POLICY', 'DOMAINTREE', 'TESTCASE', 'DEFECT', 'RISK', 'INTERFACE', 'COMPONENT', 'RUNBOOK', 'DECISION', 'OTHER'],
     allowedExtensions: ['*'],
     ignorePaths: [
       'node_modules',

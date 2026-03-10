@@ -5,6 +5,13 @@ export type ArtifactKind =
   | 'JOURNEY'
   | 'DOMAINTREE'
   | 'POLICY'
+  | 'TESTCASE'
+  | 'DEFECT'
+  | 'RISK'
+  | 'INTERFACE'
+  | 'COMPONENT'
+  | 'RUNBOOK'
+  | 'DECISION'
   | 'OTHER';
 
 export type ArtifactStatus =
@@ -15,7 +22,16 @@ export type ArtifactStatus =
   | 'rejected'
   | 'deprecated'
   | 'deferred'
-  | 'open';
+  | 'open'
+  | 'blocked'
+  | 'passed'
+  | 'failed'
+  | 'triaged'
+  | 'in-progress'
+  | 'resolved'
+  | 'verified'
+  | 'closed'
+  | 'mitigated';
 
 export type ValidationSeverity = 'info' | 'warning' | 'error';
 
@@ -275,4 +291,13 @@ export interface ContractResult {
   exitCode: number;
   ran: boolean;
   command: string | null;
+}
+
+export type ReportKind = 'traceability' | 'defect' | 'coverage' | 'impact';
+
+export interface ReportPlanOptions {
+  root: string;
+  type?: ReportKind;
+  all?: boolean;
+  output?: string;
 }
