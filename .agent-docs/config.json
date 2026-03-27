@@ -16,7 +16,8 @@
     ".githooks",
     ".idea",
     ".agent-docs/reports",
-    "example/README.md"
+    "example/README.md",
+    "docs/plans"
   ],
   "generated": {
     "markdownRoot": "generated",
@@ -72,7 +73,7 @@
     "generate": null
   },
   "beads": {
-    "enabled": false,
+    "enabled": true,
     "file": ".beads/issues.jsonl",
     "issueIdPattern": "^bead-\\d{4}$",
     "allowedStatuses": ["open", "closed"],

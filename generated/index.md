@@ -4,4 +4,4 @@ Generated from source docs at docs
 
 ## Documents
 
-- [PLAN-000 — Project Plan Index](other/plan-000.md)
+- [PLAN-000 — Project Plan Index](generated/other/plan-000.md)
