@@ -8,6 +8,7 @@ import { runDoctor } from './commands/doctor.js';
 import { runInstallGates } from './commands/hooks.js';
 import { runContractCheck, runContractGenerate } from './commands/contracts.js';
 import { runReport } from './commands/report.js';
+import { registerV2Commands } from './v2/commands.js';
 
 const program = new Command();
 
@@ -144,6 +145,13 @@ program
     );
     console.log('Hook installation complete.');
   });
+
+// ── SpecGraph v2 commands ─────────────────────────────────────
+const specgraphCommand = program
+  .command('specgraph')
+  .description('SpecGraph v2: policy-driven traceability and enforcement');
+
+registerV2Commands(specgraphCommand);
 
 program.parseAsync(process.argv);
 

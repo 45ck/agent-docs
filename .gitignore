@@ -4,3 +4,4 @@ coverage
 *.tsbuildinfo
 .agent-docs/reports/check-report.json
 **/.agent-docs/reports/check-report.json
+.specgraph/
