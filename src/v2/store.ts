@@ -83,12 +83,25 @@ export class SpecGraphStore {
 
   getSpec(specId: string): Spec | undefined {
     const row = this.db.prepare('SELECT raw_json FROM specs WHERE spec_id = ?').get(specId) as { raw_json: string } | undefined;
-    return row ? JSON.parse(row.raw_json) as Spec : undefined;
+    if (!row) return undefined;
+    try {
+      return JSON.parse(row.raw_json) as Spec;
+    } catch {
+      return undefined;
+    }
   }
 
   getAllSpecs(): Spec[] {
     const rows = this.db.prepare('SELECT raw_json FROM specs ORDER BY spec_id').all() as Array<{ raw_json: string }>;
-    return rows.map(r => JSON.parse(r.raw_json) as Spec);
+    const specs: Spec[] = [];
+    for (const r of rows) {
+      try {
+        specs.push(JSON.parse(r.raw_json) as Spec);
+      } catch {
+        // Skip rows with corrupted JSON
+      }
+    }
+    return specs;
   }
 
   // ── Subjects ────────────────────────────────────────────────
@@ -115,6 +128,9 @@ export class SpecGraphStore {
   // ── Claims ──────────────────────────────────────────────────
 
   insertClaim(claim: Claim): void {
+    if (claim.strength < 0 || claim.strength > 4) {
+      throw new Error(`Invalid claim strength ${claim.strength} for claim ${claim.id}`);
+    }
     this.db.prepare(`
       INSERT OR REPLACE INTO claims (claim_id, src, relation, dst, provider, strength, provenance, meta_json, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -146,17 +162,25 @@ export class SpecGraphStore {
       meta_json: string | null; created_at: string;
     }>;
 
-    return rows.map(r => ({
-      id: r.claim_id,
-      src: r.src,
-      relation: r.relation as Claim['relation'],
-      dst: r.dst,
-      provider: r.provider,
-      strength: r.strength as EvidenceStrength,
-      provenance: JSON.parse(r.provenance),
-      metadata: r.meta_json ? JSON.parse(r.meta_json) : undefined,
-      timestamp: r.created_at,
-    }));
+    const claims: Claim[] = [];
+    for (const r of rows) {
+      try {
+        claims.push({
+          id: r.claim_id,
+          src: r.src,
+          relation: r.relation as Claim['relation'],
+          dst: r.dst,
+          provider: r.provider,
+          strength: r.strength as EvidenceStrength,
+          provenance: JSON.parse(r.provenance),
+          metadata: r.meta_json ? JSON.parse(r.meta_json) : undefined,
+          timestamp: r.created_at,
+        });
+      } catch {
+        // Skip claims with corrupted JSON
+      }
+    }
+    return claims;
   }
 
   getAllActiveClaims(): Claim[] {
@@ -169,17 +193,25 @@ export class SpecGraphStore {
       meta_json: string | null; created_at: string;
     }>;
 
-    return rows.map(r => ({
-      id: r.claim_id,
-      src: r.src,
-      relation: r.relation as Claim['relation'],
-      dst: r.dst,
-      provider: r.provider,
-      strength: r.strength as EvidenceStrength,
-      provenance: JSON.parse(r.provenance),
-      metadata: r.meta_json ? JSON.parse(r.meta_json) : undefined,
-      timestamp: r.created_at,
-    }));
+    const claims: Claim[] = [];
+    for (const r of rows) {
+      try {
+        claims.push({
+          id: r.claim_id,
+          src: r.src,
+          relation: r.relation as Claim['relation'],
+          dst: r.dst,
+          provider: r.provider,
+          strength: r.strength as EvidenceStrength,
+          provenance: JSON.parse(r.provenance),
+          metadata: r.meta_json ? JSON.parse(r.meta_json) : undefined,
+          timestamp: r.created_at,
+        });
+      } catch {
+        // Skip claims with corrupted JSON
+      }
+    }
+    return claims;
   }
 
   // ── Evidence ────────────────────────────────────────────────
@@ -319,16 +351,24 @@ export class SpecGraphStore {
       supporting_claims: string; waiver_id: string | null;
     }>;
 
-    return rows.map(r => ({
-      specId: r.spec_id,
-      obligation: r.obligation as PolicyResult['obligation'],
-      requiredStrength: r.required_strength as EvidenceStrength,
-      bestFoundStrength: r.best_found_strength as EvidenceStrength | null,
-      status: r.status as PolicyResult['status'],
-      details: r.details,
-      supportingClaims: JSON.parse(r.supporting_claims),
-      waiverId: r.waiver_id ?? undefined,
-    }));
+    return rows.map(r => {
+      let supportingClaims: string[];
+      try {
+        supportingClaims = JSON.parse(r.supporting_claims);
+      } catch {
+        supportingClaims = [];
+      }
+      return {
+        specId: r.spec_id,
+        obligation: r.obligation as PolicyResult['obligation'],
+        requiredStrength: r.required_strength as EvidenceStrength,
+        bestFoundStrength: r.best_found_strength as EvidenceStrength | null,
+        status: r.status as PolicyResult['status'],
+        details: r.details,
+        supportingClaims,
+        waiverId: r.waiver_id ?? undefined,
+      };
+    });
   }
 
   // ── Transaction helper ──────────────────────────────────────

@@ -75,7 +75,7 @@ CREATE INDEX IF NOT EXISTS idx_evidence_claim ON evidence(claim_id);
 -- ── WAIVERS ───────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS waivers (
   waiver_id     TEXT PRIMARY KEY,
-  spec_id       TEXT NOT NULL,
+  spec_id       TEXT NOT NULL REFERENCES specs(spec_id),
   kind          TEXT NOT NULL,
   target        TEXT NOT NULL,
   owner         TEXT NOT NULL,

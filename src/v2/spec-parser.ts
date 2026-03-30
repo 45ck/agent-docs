@@ -175,7 +175,10 @@ export function parseSpecFile(filePath: string, root: string): Spec | null {
   const waiversRaw = data.waivers;
   let waivers: WaiverDef[] | undefined;
   if (Array.isArray(waiversRaw)) {
-    waivers = waiversRaw as WaiverDef[];
+    waivers = (waiversRaw as unknown[]).filter((w): w is WaiverDef => {
+      return typeof w === 'object' && w !== null &&
+        'kind' in w && 'target' in w && 'owner' in w && 'reason' in w && 'expires' in w;
+    });
   }
 
   const dependsOnRaw = data.depends_on ?? data.dependsOn;

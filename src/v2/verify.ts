@@ -94,25 +94,34 @@ export async function verify(options: VerifyOptions): Promise<VerifyResult> {
 
       // Run validation on claims (e.g., file provider checks file existence)
       if (provider.validate) {
+        const supportedKinds = provider.supports();
         const allClaims = store.getAllActiveClaims();
         for (const claim of allClaims) {
-          const newEvidence = await provider.validate(claim, ctx);
-          if (newEvidence.length > 0) {
-            store.transaction(() => {
-              for (const ev of newEvidence) {
-                store.insertEvidence(ev);
-              }
-            });
+          // Only validate claims whose dst subject kind is supported by this provider
+          const dstKind = claim.dst.split(':')[0];
+          if (!supportedKinds.includes(dstKind)) continue;
 
-            // Upgrade claim strength if file provider found evidence
-            const maxEvStrength = Math.max(...newEvidence.map(e => {
-              if (e.kind === 'file_exists') return 1; // E1
-              return 0;
-            }));
-            if (maxEvStrength > claim.strength) {
-              // Re-insert with upgraded strength
-              store.insertClaim({ ...claim, strength: maxEvStrength });
+          try {
+            const newEvidence = await provider.validate(claim, ctx);
+            if (newEvidence.length > 0) {
+              store.transaction(() => {
+                for (const ev of newEvidence) {
+                  store.insertEvidence(ev);
+                }
+              });
+
+              // Upgrade claim strength if file provider found evidence
+              const maxEvStrength = Math.max(...newEvidence.map(e => {
+                if (e.kind === 'file_exists') return 1; // E1
+                return 0;
+              }));
+              if (maxEvStrength > claim.strength) {
+                // Re-insert with upgraded strength
+                store.insertClaim({ ...claim, strength: maxEvStrength });
+              }
             }
+          } catch (err) {
+            console.error(`Warning: validate failed for claim ${claim.id} with provider ${provider.name}: ${(err as Error).message}`);
           }
         }
       }
