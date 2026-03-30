@@ -10,17 +10,17 @@ async function withTempDir(run: (root: string) => Promise<void>): Promise<void> 
   try { await run(root); } finally { await rm(root, { recursive: true, force: true }); }
 }
 
-// 1. Empty specs dir
-test('empty specs dir returns empty array', async () => {
+// 1. Empty docs dir
+test('empty docs dir returns empty array', async () => {
   await withTempDir(async (root) => {
-    await mkdir(path.join(root, 'specs'), { recursive: true });
+    await mkdir(path.join(root, 'docs'), { recursive: true });
     const specs = loadSpecs(root);
     assert.equal(specs.length, 0);
   });
 });
 
-// 2. Missing specs dir
-test('missing specs dir returns empty array', async () => {
+// 2. Missing docs dir
+test('missing docs dir returns empty array', async () => {
   await withTempDir(async (root) => {
     const specs = loadSpecs(root);
     assert.equal(specs.length, 0);
@@ -30,7 +30,7 @@ test('missing specs dir returns empty array', async () => {
 // 3. Valid spec with all fields
 test('valid spec with all fields', async () => {
   await withTempDir(async (root) => {
-    await mkdir(path.join(root, 'specs'), { recursive: true });
+    await mkdir(path.join(root, 'docs'), { recursive: true });
     const content = `---
 id: SPEC-TEST
 title: Test Specification
@@ -41,7 +41,7 @@ priority: P1
 ---
 # Body
 `;
-    await writeFile(path.join(root, 'specs', 'test.md'), content);
+    await writeFile(path.join(root, 'docs', 'test.md'), content);
     const specs = loadSpecs(root);
     assert.equal(specs.length, 1);
     assert.equal(specs[0].id, 'SPEC-TEST');
@@ -56,8 +56,8 @@ priority: P1
 // 4. Spec with no frontmatter
 test('spec with no frontmatter returns empty', async () => {
   await withTempDir(async (root) => {
-    await mkdir(path.join(root, 'specs'), { recursive: true });
-    await writeFile(path.join(root, 'specs', 'nofm.md'), '# Just markdown\nNo frontmatter here.\n');
+    await mkdir(path.join(root, 'docs'), { recursive: true });
+    await writeFile(path.join(root, 'docs', 'nofm.md'), '# Just markdown\nNo frontmatter here.\n');
     const specs = loadSpecs(root);
     assert.equal(specs.length, 0);
   });
@@ -66,7 +66,7 @@ test('spec with no frontmatter returns empty', async () => {
 // 5. Invalid state logs error and skips
 test('invalid state logs error and skips', async () => {
   await withTempDir(async (root) => {
-    await mkdir(path.join(root, 'specs'), { recursive: true });
+    await mkdir(path.join(root, 'docs'), { recursive: true });
     const content = `---
 id: SPEC-BAD
 title: Bad State
@@ -75,7 +75,7 @@ kind: feature
 ---
 # Body
 `;
-    await writeFile(path.join(root, 'specs', 'bad.md'), content);
+    await writeFile(path.join(root, 'docs', 'bad.md'), content);
     const specs = loadSpecs(root);
     // Invalid state causes parseSpecFile to throw, which is caught by collectSpecFiles
     assert.equal(specs.length, 0);
@@ -85,7 +85,7 @@ kind: feature
 // 6. required_evidence block
 test('required_evidence block is parsed', async () => {
   await withTempDir(async (root) => {
-    await mkdir(path.join(root, 'specs'), { recursive: true });
+    await mkdir(path.join(root, 'docs'), { recursive: true });
     const content = `---
 id: SPEC-EV
 title: Evidence Spec
@@ -97,7 +97,7 @@ required_evidence:
 ---
 # Body
 `;
-    await writeFile(path.join(root, 'specs', 'ev.md'), content);
+    await writeFile(path.join(root, 'docs', 'ev.md'), content);
     const specs = loadSpecs(root);
     assert.equal(specs.length, 1);
     assert.ok(specs[0].requiredEvidence);
@@ -109,7 +109,7 @@ required_evidence:
 // 7. YAML list with dashes
 test('YAML list with dashes does not crash', async () => {
   await withTempDir(async (root) => {
-    await mkdir(path.join(root, 'specs'), { recursive: true });
+    await mkdir(path.join(root, 'docs'), { recursive: true });
     const content = `---
 id: SPEC-TAGS
 title: Tagged Spec
@@ -121,7 +121,7 @@ tags:
 ---
 # Body
 `;
-    await writeFile(path.join(root, 'specs', 'tags.md'), content);
+    await writeFile(path.join(root, 'docs', 'tags.md'), content);
     const specs = loadSpecs(root);
     assert.equal(specs.length, 1);
     assert.equal(specs[0].id, 'SPEC-TAGS');
@@ -134,7 +134,7 @@ tags:
 // 8. Duplicate IDs across files
 test('duplicate IDs across files returns both specs', async () => {
   await withTempDir(async (root) => {
-    await mkdir(path.join(root, 'specs'), { recursive: true });
+    await mkdir(path.join(root, 'docs'), { recursive: true });
     const content = `---
 id: SPEC-DUP
 title: Dup 1
@@ -142,7 +142,7 @@ state: draft
 kind: feature
 ---
 `;
-    await writeFile(path.join(root, 'specs', 'dup1.md'), content);
+    await writeFile(path.join(root, 'docs', 'dup1.md'), content);
     const content2 = `---
 id: SPEC-DUP
 title: Dup 2
@@ -150,7 +150,7 @@ state: draft
 kind: feature
 ---
 `;
-    await writeFile(path.join(root, 'specs', 'dup2.md'), content2);
+    await writeFile(path.join(root, 'docs', 'dup2.md'), content2);
     const specs = loadSpecs(root);
     // No deduplication — both are returned
     assert.equal(specs.length, 2);
@@ -161,10 +161,7 @@ kind: feature
 // 9. Inline waivers
 test('inline waivers in frontmatter', async () => {
   await withTempDir(async (root) => {
-    await mkdir(path.join(root, 'specs'), { recursive: true });
-    // The parser checks Array.isArray(waiversRaw), so waivers: [] should produce empty array.
-    // Since our simple YAML parser handles `waivers: []` by setting the value to '[]' string or empty,
-    // let's test what happens and verify no crash.
+    await mkdir(path.join(root, 'docs'), { recursive: true });
     const content = `---
 id: SPEC-WAIV
 title: Waiver Spec
@@ -173,10 +170,27 @@ kind: feature
 waivers: []
 ---
 `;
-    await writeFile(path.join(root, 'specs', 'waiver.md'), content);
+    await writeFile(path.join(root, 'docs', 'waiver.md'), content);
     const specs = loadSpecs(root);
     assert.equal(specs.length, 1);
-    // The simple YAML parser will parse `waivers: []` — the value may be '[]' string or empty.
-    // Either way, no crash is the key assertion.
+    // No crash is the key assertion.
+  });
+});
+
+// 10. Legacy specs/ fallback still works
+test('legacy specs/ directory is still discovered when docs/ is absent', async () => {
+  await withTempDir(async (root) => {
+    await mkdir(path.join(root, 'specs'), { recursive: true });
+    const content = `---
+id: SPEC-LEGACY
+title: Legacy Spec
+state: draft
+kind: feature
+---
+`;
+    await writeFile(path.join(root, 'specs', 'legacy.md'), content);
+    const specs = loadSpecs(root);
+    assert.equal(specs.length, 1);
+    assert.equal(specs[0].id, 'SPEC-LEGACY');
   });
 });

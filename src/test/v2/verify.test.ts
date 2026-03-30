@@ -12,8 +12,8 @@ async function withTempDir(run: (root: string) => Promise<void>): Promise<void> 
 }
 
 async function writeSpec(root: string, filename: string, content: string): Promise<void> {
-  await mkdir(path.join(root, 'specs'), { recursive: true });
-  await writeFile(path.join(root, 'specs', filename), content, 'utf8');
+  await mkdir(path.join(root, 'docs'), { recursive: true });
+  await writeFile(path.join(root, 'docs', filename), content, 'utf8');
 }
 
 async function writeSrc(root: string, relPath: string, content: string): Promise<void> {

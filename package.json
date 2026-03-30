@@ -1,7 +1,7 @@
 {
   "name": "@45ck/agent-docs",
-  "version": "0.4.0",
-  "description": "Canonical agent-docs package for structured planning artifacts and markdown governance",
+  "version": "0.5.0",
+  "description": "specgraph — policy-driven traceability, structured artifacts, and Beads-integrated verification for AI agent workflows",
   "private": false,
   "type": "module",
   "homepage": "https://github.com/45ck/agent-docs",
@@ -26,6 +26,7 @@
   "license": "MIT",
   "author": "45ck",
   "bin": {
+    "specgraph": "dist/index.js",
     "agent-docs": "dist/index.js"
   },
   "main": "./dist/index.js",
@@ -61,10 +62,14 @@
     "access": "public"
   },
   "peerDependencies": {
-    "@45ck/noslop": "^1.0.0"
+    "@45ck/noslop": "^1.0.0",
+    "@beads/bd": ">=0.60.0"
   },
   "peerDependenciesMeta": {
     "@45ck/noslop": {
+      "optional": true
+    },
+    "@beads/bd": {
       "optional": true
     }
   },

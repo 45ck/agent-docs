@@ -205,7 +205,7 @@ function printVerifySummary(results: SpecVerificationResult[], summary: RunSumma
   };
 
   if (results.length === 0) {
-    console.log('No specs found in /specs/ directory.');
+    console.log('No specs found. Add markdown files with YAML frontmatter to docs/.');
     return;
   }
 

@@ -13,9 +13,9 @@ import { registerV2Commands } from './v2/commands.js';
 const program = new Command();
 
 program
-  .name('agent-docs')
-  .description('Structured planning artifacts and AI-agent-safe documentation workflows')
-  .version('0.4.0');
+  .name('specgraph')
+  .description('Structured planning artifacts, traceability, and AI-agent-safe documentation workflows')
+  .version('0.5.0');
 
 program
   .command('init')
@@ -24,7 +24,7 @@ program
   .action((root: string) => {
     runInit(path.resolve(root))
       .then(() => {
-        console.log(`Initialized agent-docs in ${path.resolve(root)}`);
+        console.log(`Initialized specgraph in ${path.resolve(root)}`);
       })
       .catch((error) => {
         console.error('init failed:', error);
@@ -74,25 +74,15 @@ program
 
 program
   .command('generate')
-  .description('Generate markdown/TOON outputs from source artifacts')
+  .description('Generate markdown outputs from source artifacts')
   .argument('[root]', 'Project root', process.cwd())
-  .option('--format <format>', 'Output format: markdown, toon, both', 'markdown')
   .option('--strict', 'Fail on warnings before generation')
-  .action(
-    async (
-      root: string,
-      options: {
-        format?: string;
-        strict?: boolean;
-      },
-    ) => {
-      const format = sanitizeFormat(options.format);
-      const result = await runGenerate({ root, strict: Boolean(options.strict), format });
-      if (result.exitCode !== 0) {
-        process.exit(1);
-      }
-    },
-  );
+  .action(async (root: string, options: { strict?: boolean }) => {
+    const result = await runGenerate({ root, strict: Boolean(options.strict), format: 'markdown' });
+    if (result.exitCode !== 0) {
+      process.exit(1);
+    }
+  });
 
 program
   .command('doctor')
@@ -131,7 +121,7 @@ program
 
 program
   .command('install-gates')
-  .description('Install agent-docs git hooks for pre-commit and pre-push checks')
+  .description('Install git hooks for pre-commit and pre-push checks')
   .argument('[root]', 'Project root', process.cwd())
   .option('--force', 'Overwrite existing hooks')
   .option('--core-path', 'Configure git to use .agent-docs/hooks')
@@ -146,19 +136,7 @@ program
     console.log('Hook installation complete.');
   });
 
-// ── SpecGraph v2 commands ─────────────────────────────────────
-const specgraphCommand = program
-  .command('specgraph')
-  .description('SpecGraph v2: policy-driven traceability and enforcement');
-
-registerV2Commands(specgraphCommand);
+// ── Traceability & verification commands (promoted to top level) ──
+registerV2Commands(program);
 
 program.parseAsync(process.argv);
-
-function sanitizeFormat(format?: string): 'markdown' | 'toon' | 'both' {
-  const normalized = String(format ?? 'markdown').toLowerCase();
-  if (normalized === 'toon' || normalized === 'both' || normalized === 'markdown') {
-    return normalized;
-  }
-  return 'markdown';
-}

@@ -15,6 +15,7 @@ import { loadSpecs } from './spec-parser.js';
 import { evaluateSpec } from './policy.js';
 import { AnnotationProvider } from './providers/annotation.js';
 import { FileProvider } from './providers/file.js';
+import { BeadsProvider } from '../providers/beads.js';
 
 export interface VerifyOptions {
   root: string;
@@ -66,6 +67,7 @@ export async function verify(options: VerifyOptions): Promise<VerifyResult> {
     const providers: Provider[] = [
       new AnnotationProvider(),
       new FileProvider(),
+      new BeadsProvider(),
     ];
 
     const ctx = { root, runId, changedFiles };

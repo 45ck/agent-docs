@@ -187,7 +187,7 @@ export function parseSpecFile(filePath: string, root: string): Spec | null {
   const tagsRaw = data.tags;
   const tags = Array.isArray(tagsRaw) ? tagsRaw as string[] : undefined;
 
-  const sourceHash = createHash('sha256').update(content).digest('hex').slice(0, 16);
+  const sourceHash = createHash('sha256').update(content).digest('hex');
   const sourcePath = path.relative(root, filePath).replace(/\\/g, '/');
 
   return {
@@ -209,16 +209,28 @@ export function parseSpecFile(filePath: string, root: string): Spec | null {
 }
 
 /**
- * Discover and parse all spec files under the specs directory.
+ * Discover and parse all spec/artifact files under the docs directory.
+ * Falls back to specs/ for backwards compatibility with older project layouts.
  */
 export function loadSpecs(root: string): Spec[] {
-  const specsDir = path.join(root, 'specs');
   const specs: Spec[] = [];
 
+  // Primary: docs/ (unified source directory)
+  const docsDir = path.join(root, 'docs');
   try {
-    collectSpecFiles(specsDir, root, specs);
+    collectSpecFiles(docsDir, root, specs);
   } catch {
-    // specs/ directory may not exist yet — that's fine
+    // docs/ may not exist — that's fine
+  }
+
+  // Fallback: specs/ (legacy layout, do not double-count if docs/ already found files)
+  if (specs.length === 0) {
+    const specsDir = path.join(root, 'specs');
+    try {
+      collectSpecFiles(specsDir, root, specs);
+    } catch {
+      // specs/ may not exist either — that's fine
+    }
   }
 
   return specs;
