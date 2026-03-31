@@ -13,6 +13,29 @@ Both workflows share a single config at `.specgraph/config.json`.
 
 ---
 
+## Does it actually work?
+
+Five controlled experiments compared the full toolkit (specgraph + noslop + skill-harness skills) against raw Claude Code with no tooling, across different task types. Full data: [`skill-harness/experiments/RESULTS.md`](https://github.com/45ck/skill-harness/blob/main/experiments/RESULTS.md).
+
+| Experiment | Group A (toolkit) | Group B (baseline) | Delta |
+|---|:---:|:---:|:---:|
+| Small greenfield (×2) | 31–32 / 35 | 19–20 / 35 | +12 |
+| Large greenfield | 32 / 35 | 19 / 35 | +13 |
+| Maintenance / handoff | 33 / 35 | 19 / 35 | +14 |
+| **Ambiguous brief** | **35 / 35** | **13 / 35** | **+22** |
+
+**What the toolkit does and does not do:**
+
+- Does **not** improve raw code quality — functional output was equal in every experiment
+- Does **not** increase test coverage — baseline often wrote more tests
+- **Does** enforce scope discipline on vague requirements — on an ambiguous brief, Group A wrote 1 file / 3 functions; Group B built a 4-class framework with JSONL persistence and wildcard routing nobody asked for
+- **Does** reduce maintenance friction — a fresh agent on the spec-tracked codebase had zero friction; on the plain codebase it hit a hidden mutable-state trap requiring extra scaffolding
+- **Does** produce a traceability chain — every function links to a requirement; every requirement has an evidence status
+
+**When to use it:** any project touched by more than one agent session, especially with unclear or evolving requirements. The value compounds across sessions.
+
+---
+
 ## Installation
 
 ```bash
