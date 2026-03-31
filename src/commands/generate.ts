@@ -1,3 +1,9 @@
+/**
+ * `specgraph generate` command — generate markdown/TOON outputs from source artifacts.
+ *
+ * Validates artifacts, then renders each one to `generated/<kind>/<slug>.md`
+ * (or `.toon`) and writes a manifest of generated files.
+ */
 import path from 'node:path';
 import {
   loadArtifacts,

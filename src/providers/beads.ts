@@ -17,7 +17,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import type { Provider, ScanContext, ScanResult, Subject, Claim, Evidence } from '../v2/types.js';
+import type { Provider, ScanContext, ScanResult, Subject, Claim, Evidence, Relation } from '../v2/types.js';
 import { EvidenceStrength, makeSubjectId } from '../v2/types.js';
 
 // Beads issue statuses that represent completed work
@@ -48,7 +48,7 @@ export class BeadsProvider implements Provider {
     return ['issue'];
   }
 
-  strengthFor(relation: string): EvidenceStrength {
+  strengthFor(_relation: Relation): EvidenceStrength {
     // Closed issues give structural evidence (E1); open give declarative (E0)
     return EvidenceStrength.E1;
   }

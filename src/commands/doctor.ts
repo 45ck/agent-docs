@@ -1,3 +1,9 @@
+/**
+ * `specgraph doctor` command — environment and config health check.
+ *
+ * Verifies that required directories, config files, and optional peer
+ * dependencies are present. Reports warnings for missing optional items.
+ */
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { loadConfig } from '../config.js';

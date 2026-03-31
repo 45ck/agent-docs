@@ -1,3 +1,10 @@
+/**
+ * `specgraph init` command — initialize a project for specgraph.
+ *
+ * Creates `.specgraph/config.json`, starter TOON templates, and git hook
+ * templates under `.specgraph/hooks/`. Safe to re-run — existing files are
+ * not overwritten unless `--force` is supplied.
+ */
 import { existsSync, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

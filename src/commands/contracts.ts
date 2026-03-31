@@ -1,3 +1,10 @@
+/**
+ * `specgraph contracts` command — run configured contract check/generate commands.
+ *
+ * Delegates to shell commands defined in `contracts.check.command` and
+ * `contracts.generate.command` in `.specgraph/config.json`. Useful for
+ * multi-language boundary validation (Protobuf, OpenAPI, JSON Schema, etc.).
+ */
 import path from 'node:path';
 import { loadConfig } from '../config.js';
 import { runShellCommand } from '../lib/command-runner.js';

@@ -1,3 +1,17 @@
+/**
+ * specgraph configuration — loading, defaults, and utilities.
+ *
+ * Config is read from `.specgraph/config.json` with fallback to the legacy
+ * `.agent-docs/config.json`. Missing keys are merged with `DEFAULT_CONFIG`.
+ *
+ * Public API:
+ *   loadConfig(root)         — read config for a project root
+ *   writeDefaultConfig(root) — write a default config file
+ *   isGeneratedPath(p, allow) — test whether a path is an allowed generated path
+ *   configPath(root, rel)    — resolve a config-relative path
+ *   fileExists(path)         — async existence check
+ *   rootDirFromCurrent()     — absolute path of this module's directory
+ */
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promises as fs } from 'node:fs';

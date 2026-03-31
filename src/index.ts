@@ -1,4 +1,13 @@
 #!/usr/bin/env node
+/**
+ * specgraph CLI entry point.
+ *
+ * Registers all commands (verify, explain, find, waivers, subject, check,
+ * generate, init, report, doctor, install-gates, contracts) and delegates
+ * to the appropriate command handler.
+ *
+ * Run `specgraph --help` for the full command list.
+ */
 import { Command } from 'commander';
 import path from 'node:path';
 import { runCheck } from './commands/check.js';

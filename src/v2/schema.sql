@@ -1,5 +1,8 @@
--- SpecGraph v2 SQLite schema (v1)
--- All times are ISO 8601 text. IDs are text.
+-- specgraph SQLite schema v2
+-- All timestamps are ISO 8601 text (UTC). All IDs are TEXT.
+-- Evidence strength integers map to: 0=E0 (declarative), 1=E1 (structural),
+--   2=E2 (indexed), 3=E3 (automated), 4=E4 (runtime).
+-- Active claims have superseded_at IS NULL.
 
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;

@@ -1,3 +1,10 @@
+/**
+ * `specgraph report` command — generate analytical matrix reports.
+ *
+ * Produces one or more reports from the artifact graph and writes them as
+ * markdown to `generated/reports/`. Available types: traceability, defect,
+ * coverage, impact.
+ */
 import path from 'node:path';
 import { loadConfig } from '../config.js';
 import { Collector, loadArtifacts } from '../lib/checker.js';

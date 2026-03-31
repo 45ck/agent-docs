@@ -1,3 +1,10 @@
+/**
+ * `specgraph install-gates` command — install git pre-commit and pre-push hooks.
+ *
+ * Writes hook scripts to `.specgraph/hooks/` that run `specgraph check --strict`
+ * (and optionally `@45ck/noslop` checks) on every commit and push.
+ * Pass `--core-path` to configure `git config core.hooksPath` automatically.
+ */
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { configPath, fileExists, loadConfig } from '../config.js';

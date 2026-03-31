@@ -1,318 +1,399 @@
-# @45ck/agent-docs
+# specgraph (`@45ck/agent-docs`)
 
-`agent-docs` is a TypeScript CLI package for managing planning artifacts in a structured
-format that is safe for AI agents and CI.
+**specgraph** is a policy-driven spec verification engine and TOON-based artifact management CLI for TypeScript/Node projects. It tracks evidence that code actually implements its specs, enforces evidence-strength thresholds per state, and generates structured planning artifacts safe for AI agents and CI.
 
-It is intentionally strict about source format:
+Two complementary workflows in one package:
 
-- Source documents are TOON-based `.toon` files by default.
-- Markdown is treated as generated output only (by default).
-- Validation enforces references, status consistency, conflict symmetry, optional contradiction matrices, and optional code traceability mappings.
-- Optional Beads check validates `.beads/issues.jsonl` records when enabled (IDs, status, and blocker links).
-- Optional generation creates human-readable markdown and/or compact TOON outputs from the source artifacts.
+| Workflow | Commands | What it does |
+|---|---|---|
+| **Spec verification** (v2) | `verify`, `explain`, `find`, `waivers`, `subject` | Policy-driven evidence tracking: scan annotations, Beads issues, cross-refs; evaluate against required evidence thresholds |
+| **Artifact management** (v1) | `check`, `generate`, `report`, `init`, `doctor` | TOON-format source documents, validation, markdown generation, contradiction matrices |
+
+Both workflows share a single config at `.specgraph/config.json`.
+
+---
 
 ## Installation
-
-When a public npm release is available:
 
 ```bash
 npm install @45ck/agent-docs
 ```
 
-Until the npm package is published, install directly from GitHub or from a tarball built with `npm pack`:
+Or from GitHub until the npm release is available:
 
 ```bash
 npm install github:45ck/agent-docs
 ```
 
+The binary is available as both `specgraph` and `agent-docs`.
+
+---
+
+## Quick start — spec verification
+
 ```bash
-npm pack
-npm install ./45ck-agent-docs-<version>.tgz
+# 1. Add spec docs to docs/
+cat > docs/my-feature.md << 'EOF'
+---
+id: FEAT-001
+title: "My Feature"
+state: in_progress
+kind: functional
+required_evidence:
+  implementation: E0
+---
+
+# My Feature
+
+Describe what this feature does.
+EOF
+
+# 2. Annotate source with @spec / @implements
+#    /** @spec FEAT-001 @implements MyClass */
+
+# 3. Run verification
+specgraph verify
+
+# 4. Drill into results
+specgraph explain FEAT-001
+specgraph find --relation IMPLEMENTS
 ```
 
-## Quick start
+## Quick start — artifact management
 
 ```bash
-cd your-project
-agent-docs init
-agent-docs install-gates --quality
-agent-docs check --strict
-agent-docs generate --format both
+specgraph init
+specgraph install-gates --quality
+specgraph check --strict
+specgraph generate --format both
 ```
 
-## What `init` creates
+---
 
-`agent-docs init` creates/refreshes:
+## Spec frontmatter reference
 
-- `.agent-docs/config.json`
-- `.agent-docs/templates/*.{toon,a-doc}` (starter documents)
-- `.agent-docs/hooks/pre-commit` and `.agent-docs/hooks/pre-push` templates
-- `docs/PLAN.toon` starter plan if not already present
-- `docs:check` and `docs:generate` scripts in `package.json` when present
+Specs are markdown files in `docs/` (or `specs/` for legacy layouts) with YAML frontmatter.
 
-## Command reference
+```yaml
+---
+id: FEAT-001                    # required — unique identifier
+title: "My Feature"             # required
+state: draft                    # required — see states below
+kind: functional                # optional — functional | DOMAINTREE | ...
+owner: team-name                # optional
+priority: high                  # optional
+description: "One-liner"        # optional — short summary
+depends_on:                     # optional — cross-reference list
+  - FEAT-002
+conflicts_with:                 # optional
+  - FEAT-003
+required_evidence:              # optional — override policy defaults
+  implementation: E1
+  verification: E0
+subjects:                       # optional — link to tracked subjects
+  models:
+    - MyModel
+  apis:
+    - POST /items
+  tests:
+    - items.test.ts
+waivers:                        # optional — inline evidence waivers
+  - kind: missing-verification
+    target: "*"
+    owner: eng-lead
+    reason: "No automated tests yet"
+    expires: "2026-12-31"
+tags:
+  - backend
+---
 
-### Markdown policy
+Body prose here.
+```
 
-`markdownPolicy.mode` controls how markdown outside allowed generated paths is handled:
+### Spec states
 
-- `deny` (default): fail checks.
-- `warn`: report warnings only.
-- `allow`: ignore markdown policy checks.
+| State | Policy | Notes |
+|---|---|---|
+| `draft` | Always passes | No evidence required |
+| `proposed` | Advisory | Warns if no implementation found |
+| `in_progress` | E1 implementation required | Verification is advisory |
+| `accepted` | E2 impl + E2 verification + E1 models | Full evidence required |
+| `done` | E3 impl + E3 verification + E2 models | High-confidence evidence |
+| `deprecated` | Always passes | No evidence required |
 
-### `agent-docs contracts [check|generate] [root]`
+### Evidence strength levels
 
-Contract-aware projects often need shared artifacts for multiple language stacks. Configure commands in `.agent-docs/config.json`:
+| Level | Name | Source |
+|---|---|---|
+| **E0** | Declarative | `@spec`/`@implements` JSDoc annotation |
+| **E1** | Structural | File/symbol reference; Beads closed issue |
+| **E2** | Indexed | Stored in specgraph DB; linked artifact |
+| **E3** | Automated | Passing test suite evidence |
+| **E4** | Runtime | Live system probe or runtime assertion |
 
-- `contracts.enabled`: enable contract-stage command execution in hooks
-- `contracts.check.command`: command that validates generated contracts
-- `contracts.generate.command`: command that regenerates contracts
-- `contracts.check.workingDirectory` / `contracts.generate.workingDirectory`: optional execution roots
+The `required_evidence` block in a spec overrides policy defaults for that spec only. Specify any combination of `implementation`, `verification`, `models`, or `apis`.
 
-Examples:
+---
 
-- `agent-docs contracts check .` runs your contract validation command
-- `agent-docs contracts generate .` runs your contract generation command
-- `--strict` fails hard when no command is configured
+## Verify commands
 
-Example multi-language config:
+### `specgraph verify [root]`
+
+Run all providers, evaluate all specs against policy, store results in `.specgraph/specgraph.db`.
+
+```
+Options:
+  --spec <id>      Evaluate a single spec only
+  --changed <f>    Comma-separated list of changed files (incremental scan)
+  --json           Output results as JSON
+  --no-db          Skip writing to DB (dry run)
+```
+
+Output example:
+```
+  PASS  FEAT-001  [accepted]
+  WARN  FEAT-002  [in_progress]
+         warn: No verification claims found (advisory)
+  FAIL  FEAT-003  [accepted]
+         fail: No implementation claims found. Required: E2 (indexed)
+  INSUFFICIENT  FEAT-004  [accepted]
+         insufficient-evidence: implementation: found E0 but required E2
+```
+
+### `specgraph explain [spec-id]`
+
+Show detailed evidence for one spec, or all specs.
+
+```bash
+specgraph explain FEAT-001
+specgraph explain           # all specs
+```
+
+### `specgraph find`
+
+Query the claims graph.
+
+```bash
+specgraph find --spec FEAT-001
+specgraph find --relation IMPLEMENTS
+specgraph find --provider annotation
+specgraph find --strength 1          # E1 and above
+```
+
+### `specgraph waivers [spec-id]`
+
+List active waivers, optionally filtered to one spec.
+
+### `specgraph subject <subject-id>`
+
+Show all claims targeting a specific subject (e.g. `symbol:annotation:TodoStore`).
+
+---
+
+## Providers
+
+specgraph ships with 7 built-in evidence providers:
+
+| Provider | Evidence | What it scans |
+|---|---|---|
+| `annotation` | E0 | `@spec`/`@implements`/`@model`/`@test`/`@api` tags in source comments |
+| `file` | E1 | File-level spec→subject references via the `subjects` frontmatter field |
+| `beads` | E0/E1 | Beads issues with `spec_id` field (`bd export`) |
+| `cross-ref` | E0/E1 | `depends_on` / `conflicts_with` chains between specs |
+| `terminology` | E0 | `{{term}}` references in DOMAINTREE specs |
+| `markdown-policy` | — | Flags `.md` files outside `docs/` and configured allowed paths |
+| `freshness` | E2 | Compares `generated_outputs` source hashes against current files |
+
+### Code annotations
+
+Place `@spec` and `@implements` tags in any comment style:
+
+```typescript
+/**
+ * @spec FEAT-001
+ * @implements MyClass
+ * @model UserModel
+ * @test user.test.ts
+ * @api POST /users
+ */
+export class MyClass { ... }
+```
+
+Python, Go, Rust, Java, C#, Ruby, and most other languages are supported via `#`, `//`, `/* */`, and `"""` comment styles.
+
+---
+
+## Configuration
+
+Config file: `.specgraph/config.json` (falls back to `.agent-docs/config.json`).
+
+```json
+{
+  "version": "1.0",
+  "markdownPolicy": {
+    "mode": "deny",
+    "allowInGeneratedPaths": ["generated"]
+  },
+  "beads": {
+    "enabled": true,
+    "file": ".beads/issues.jsonl"
+  }
+}
+```
+
+All keys are optional — missing values merge with built-in defaults.
+
+**Key options:**
+
+| Key | Default | Description |
+|---|---|---|
+| `markdownPolicy.mode` | `"deny"` | `deny` \| `warn` \| `allow` — stray `.md` policy |
+| `markdownPolicy.allowInGeneratedPaths` | `["generated"]` | Paths where `.md` is allowed |
+| `beads.enabled` | `false` | Enable Beads issue scanning |
+| `beads.file` | `".beads/issues.jsonl"` | JSONL export file |
+| `sourceExtension` | `".toon"` | Extension for v1 TOON artifacts |
+| `sourceRoots` | `["docs"]` | Directories to scan for TOON artifacts |
+| `strict.requireCodeTraceability` | `false` | Require `implements` on TOON artifacts |
+| `terminology.enabled` | `false` | Enable `{{term}}` validation |
+| `references.enabled` | `false` | Enable cross-document relation rules |
+
+---
+
+## Artifact management commands (v1)
+
+### `specgraph init [root]`
+
+Initialize `.specgraph/config.json`, starter templates, and git hooks.
+
+Creates:
+- `.specgraph/config.json`
+- `.specgraph/templates/*.toon` starter documents
+- `.specgraph/hooks/pre-commit` and `pre-push`
+
+### `specgraph check [root]`
+
+Validate TOON source artifacts:
+- Required fields, references, status values, conflict symmetry
+- Contradiction matrix, code traceability mappings
+- Markdown policy (no free `.md` docs outside generated paths)
+- Beads issue validation when enabled
+
+Options: `--strict` — promote warnings to errors.
+
+### `specgraph generate [root]`
+
+Generate markdown/TOON outputs from source artifacts to `generated/`.
+
+Options: `--format <markdown|toon|both>` (default `markdown`), `--strict`
+
+### `specgraph report [root]`
+
+Generate analytical matrix reports from the artifact graph to `generated/reports/`.
+
+Options: `--type <traceability|defect|coverage|impact>`, `--all`, `--output <dir>`
+
+| Report | Description |
+|---|---|
+| **Traceability Matrix** | Requirement → Design → Code → Test coverage gaps |
+| **Defect Matrix** | DEFECT artifacts grouped by severity/status |
+| **Coverage Matrix** | Per-requirement: has design? has code? has test? |
+| **Impact Matrix** | Reverse dependency graph per artifact |
+
+### `specgraph doctor [root]`
+
+Quick environment and config validation.
+
+### `specgraph install-gates [root]`
+
+Install git hooks for pre-commit/pre-push checks.
+
+Options: `--core-path`, `--force`, `--quality` (enables `@45ck/noslop` when available)
+
+### `specgraph contracts [check|generate] [root]`
+
+Run configured contract validation/generation commands for multi-language boundaries.
 
 ```json
 {
   "contracts": {
     "enabled": true,
-    "check": {
-      "command": "npm run contracts:check && dotnet test Contracts.Tests --nologo && cargo check -p contracts-lib"
-    },
-    "generate": {
-      "command": "npm run contracts:generate"
-    }
+    "check": { "command": "npm run contracts:check" },
+    "generate": { "command": "npm run contracts:generate" }
   }
 }
 ```
 
-## Spec references
+---
 
-Use `specRefs` in an artifact for reverse links to issue trackers or planning systems:
+## Artifact kinds (v1 TOON)
 
-```toonsnippet
-specRefs[0]: AD-101
-specRefs[1]: BEAD-9001
+| Kind | Purpose |
+|---|---|
+| `ADR` | Architecture Decision Record |
+| `PRD` | Product Requirements Document |
+| `SRD` | System Requirements Document |
+| `JOURNEY` | User Journey Map |
+| `DOMAINTREE` | Domain Model Tree (also used for `{{term}}` vocabulary) |
+| `POLICY` | Governance Policy |
+| `TESTCASE` | Test Specification |
+| `DEFECT` | Bug Report |
+| `RISK` | Risk Register Entry |
+| `INTERFACE` | API/Boundary Spec |
+| `COMPONENT` | Component Design |
+| `RUNBOOK` | Operational Playbook |
+| `DECISION` | Lightweight Decision Record |
+
+---
+
+## Example project
+
+See [`example/`](./example/) for **Tasko** — a TypeScript CLI todo-list app with full specgraph integration. It has 7 spec docs, annotated source code, and a passing `specgraph verify` run.
+
+```bash
+cd example
+npm run build
+node dist/main.js add "Buy milk" --priority high
+node dist/main.js list
+node ../dist/index.js verify
 ```
 
-`specRefs` is optional and can be any identifier you use for external issue systems.
+---
 
-Copy `.agent-docs/templates/vscode-settings.json` to `.vscode/settings.json` for minimal TOON editor hints.
+## Beads integration
 
-Suggested package scripts for the same project:
+When [`bd`](https://github.com/steveyegge/beads) is available, issues with a `spec_id` field automatically produce evidence:
 
-```json
-{
-  "scripts": {
-    "contracts:check": "buf check breaking --against .agent-docs/contracts/snapshots && npm run lint:contracts",
-    "contracts:generate": "npm run proto:gen && dotnet build Contracts.Api /t:GenerateContractClients && cargo run -p contracts-codegen"
-  }
-}
+```bash
+bd create "Implement login" --spec-id FEAT-001
+# → IMPLEMENTS E0 (open issue)
+
+# Once closed:
+# → IMPLEMENTS E1 (closed feature/task/decision)
+# → VERIFIED_BY E1 (closed bug)
 ```
 
-### `agent-docs check [root]`
+Install `@beads/bd >= 0.60.0` as an optional peer dependency.
 
-- Reads config and validates:
-  - source artifact structure and required fields
-  - references and IDs
-  - status values and canonical keys
-  - conflict symmetry
-  - configured contradiction matrix (`.agent-docs/contradictions.json` or `.agent-docs/contradictions.toon`)
-  - code-to-repo mappings (for `implements`) when enabled in config
-  - markdown policy (no free markdown docs outside generated paths by default)
-  - generated manifest freshness (optional via config strictness)
-- Writes JSON report to `.agent-docs/reports/check-report.json`
-- Validates optional cross-document relation policies from `.agent-docs/config.json`
-  (example: enforce `ADR` documents to reference at least one `PRD`/`SRD` via `dependsOn`,
-  ensure referenced artifact kinds are allowed, and enforce min/max counts).
-- Validates terminology consistency from `DOMAINTREE` metadata terms (configurable in
-  `terminology` config) when placeholder terms are used in titles/sections as `{{Term}}`.
-- Validates Beads issue records in `.beads/issues.jsonl` when `beads.enabled` is true.
-  Issues are validated for JSONL parseability, ID format, status, and `blockedBy` reference integrity.
-
-Options:
-
-- `--strict`  
-  Promote warnings to errors and fail on any issue.
-
-### `agent-docs generate [root]`
-
-- Validate artifacts
-- Generate docs in:
-  - markdown: `./generated/<kind>/<slug>.md` and `./generated/index.md`
-  - toon: `./generated/<kind>/<slug>.toon` and `./generated/index.toon`
-- Writes `.agent-docs/manifest.json`
-
-Options:
-
-- `--format <markdown|toon|both>` (default `markdown`)
-- `--strict` fail on warnings before generating
-
-### `agent-docs init [root]`
-
-Initialize project structure and template artifacts.
-
-### `agent-docs report [root]`
-
-Generate analytical matrix reports from the artifact graph. Reports are written as markdown to `generated/reports/` by default.
-
-Options:
-
-- `--type <type>` generate a single report type: `traceability`, `defect`, `coverage`, or `impact`
-- `--all` generate all 4 report types (default when no `--type` is specified)
-- `--output <dir>` custom output directory
-
-Report types:
-
-- **Traceability Matrix** — Requirement (SRD/PRD) to Design (ADR/COMPONENT) to Code to Test. Shows coverage gaps.
-- **Defect Matrix** — DEFECT artifacts grouped by severity/status/component with summary tables.
-- **Coverage Matrix** — Per-requirement breakdown: has design? has code? has test? With percentage summaries.
-- **Impact Matrix** — Reverse dependency graph showing direct and transitive dependents per artifact.
-
-### `agent-docs doctor [root]`
-
-Quick environment validation for required folders and config.
-
-### `agent-docs install-gates [root]`
-
-Installs git hooks that run `agent-docs contracts check --strict` (when configured), optional
-`@45ck/noslop` checks, and `agent-docs check --strict`, and optionally sets `core.hooksPath`
-to `.agent-docs/hooks`.
-
-When `--quality` is supplied, hooks also attempt to run `noslop check` (fast on pre-commit, slow on pre-push) before `agent-docs check`:
-- if `node_modules/.bin/noslop` exists, it is used
-- if `noslop` is on PATH, it is used
-- if `RUN_NOSLOP_CHECKS=1` and npx is available, `@45ck/noslop@1.0.0` is used
-
-If noslop is not available, hooks still execute `agent-docs` only and installation continues.
-
-Options:
-
-- `--core-path` configure `git config core.hooksPath .agent-docs/hooks`
-- `--force` overwrite existing local hook files in `.agent-docs/hooks`
-- `--quality` run optional noslop checks in installed hooks
-
-Copy `templates/agent-docs-ci.yml` to `.github/workflows/agent-docs.yml` to get a ready `docs:check` CI job.
-
-Project peer dependency note: for repo-wide quality support, use this package with
-`@45ck/noslop@1.0.0` when available.
-
-## Artifact Kinds
-
-agent-docs ships with 14 built-in artifact kinds (+ OTHER):
-
-| Kind | Purpose | Template Sections |
-|------|---------|-------------------|
-| ADR | Architecture Decision Record | Context, Decision, Alternatives, Consequences |
-| PRD | Product Requirements Document | Problem Statement, Success Criteria, Scope |
-| SRD | System Requirements Document | Functional Requirements, Non-Functional Requirements |
-| JOURNEY | User Journey Map | Actors, Steps, Exceptions |
-| DOMAINTREE | Domain Model Tree | Root Domain, Sub-Domains |
-| POLICY | Governance Policy | Policy Statement, Compliance |
-| TESTCASE | Test Specification | Preconditions, Steps, Expected Result, Postconditions |
-| DEFECT | Bug Report | Description, Steps to Reproduce, Expected vs Actual, Root Cause, Resolution |
-| RISK | Risk Register Entry | Description, Triggers, Mitigations, Contingency |
-| INTERFACE | API/Boundary Spec | Overview, Endpoints, Request/Response, Authentication, Versioning |
-| COMPONENT | Component Design | Responsibilities, Dependencies, Boundaries, Deployment |
-| RUNBOOK | Operational Playbook | Prerequisites, Steps, Rollback, Verification |
-| DECISION | Lightweight Decision Record | Context, Decision, Rationale |
-
-### Kind-Specific Metadata
-
-Some kinds require or accept metadata fields validated at check time:
-
-- **TESTCASE**: `testType` (required: unit/integration/e2e/manual/performance), `verifies` (required: artifact ID array)
-- **DEFECT**: `severity` (required: critical/high/medium/low), `priority` (optional: P0-P4), `affectedArtifacts` (optional: ID array)
-- **RISK**: `probability` (required: 1-5), `impact` (required: 1-5), `mitigations` (optional: string array)
-- **INTERFACE**: `protocol` (optional: REST/gRPC/GraphQL/event)
-- **COMPONENT**: `parentComponent` (optional: artifact ID)
-
-Metadata is placed in the `metadata` object of each artifact.
-
-## Config
-
-Create `.agent-docs/config.json` to customize behavior. Missing values are merged with defaults.
-
-Common options:
-
-- `sourceExtension`: file extension for source artifacts (default `.toon`)
-- `sourceRoots`: directories searched for source docs
-- `markdownPolicy.mode`: `deny` (default), `warn`, `allow`
-- `ignorePaths`: directories to skip during scans. Add `.beads`, `.claude`, `.githooks`, `.husky`, `.vscode`, `.idea`, `reports` to reduce noise from tooling folders.
-- `codeTraceability.allowedExtensions`: if `['*']` then all file extensions are accepted for code mappings (`*` is useful for Java, C#, Rust, PHP, Kotlin, etc.)
-- `generated.markdownRoot`: output folder for generated markdown (`generated`)
-- `strict.requireGeneratedFreshness`: require manifest and source hash parity
-- `strict.requireCodeTraceability`: require docs to declare `implements` mappings
-- `strict.requireCodeSymbols`: require symbol hints on `implements` references
-- `codeTraceability.requireForKinds`: document kinds that require mappings when strict traceability is on
-- `codeTraceability.ignorePaths`: paths to ignore when validating code references
-- `kindDefaults`: per-kind valid status lists and required conventions
-- `references`: optional cross-document relation rules and target kind constraints
-- `terminology`: optional terminology validation using source-kind metadata and `{{term}}` usage checks
-- `beads`: optional `.beads/issues.jsonl` checks (`enabled`, `file`, `issueIdPattern`, `allowedStatuses`, `validateBlockedRefs`)
-
-Example cross-document policy:
-
-```json
-{
-  "references": {
-    "enabled": true,
-    "rules": [
-      {
-        "sourceKinds": ["ADR"],
-        "field": "dependsOn",
-        "requiredTargetKinds": ["PRD", "SRD"],
-        "requiredTargetMinCount": 1
-      }
-    ]
-  },
-  "terminology": {
-    "enabled": true,
-    "sourceKinds": ["DOMAINTREE"],
-    "termMetadataKeys": ["terms"],
-    "aliasMetadataKey": "termAliases",
-    "termRegex": "\\{\\{\\s*([^}]+?)\\s*\\}\\}",
-    "includeSectionBodies": true,
-    "unknownTermSeverity": "warning"
-  },
-  "beads": {
-    "enabled": false,
-    "file": ".beads/issues.jsonl",
-    "issueIdPattern": "^bead-\\d{4}$",
-    "allowedStatuses": ["open", "closed"],
-    "validateBlockedRefs": true
-  }
-}
-```
+---
 
 ## Contributing
-
-If you plan to extend this repo, run:
 
 ```bash
 npm install
 npm run build
-npm run check
+npm test
+npm run typecheck
 ```
 
-Then generate sample outputs:
-
-```bash
-npm run generate -- --format both
-```
-
-To validate the packaged consumer path before publishing:
+Validate the packaged install path:
 
 ```bash
 npm run pack:smoke
 ```
 
+---
+
 ## Release
 
-- `quality.yml` runs build, tests, and the packed-install smoke on PRs and pushes to `master`.
-- `release.yml` repeats the same checks and publishes to npm on `v*` tags when `NPM_TOKEN` is configured.
+- `quality.yml` runs build, tests, and pack smoke on PRs and `master` pushes.
+- `release.yml` publishes to npm on `v*` tags when `NPM_TOKEN` is set.

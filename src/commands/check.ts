@@ -1,3 +1,10 @@
+/**
+ * `specgraph check` command — validate TOON source artifacts.
+ *
+ * Reads the project config, loads all source artifacts, runs the checker
+ * (references, status, conflict symmetry, markdown policy, Beads validation,
+ * code traceability), and writes a JSON report to `.specgraph/reports/check-report.json`.
+ */
 import path from 'node:path';
 import { writeFile } from 'node:fs/promises';
 import { ensureDirectory } from '../lib/utils.js';
