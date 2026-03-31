@@ -89,5 +89,8 @@
   "directories": {
     "doc": "docs",
     "example": "example"
-  }
+  },
+  "workspaces": [
+    "example"
+  ]
 }

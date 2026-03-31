@@ -1,29 +1,26 @@
 {
-  "name": "agent-docs-todo-example",
+  "name": "tasko-example",
+  "version": "1.0.0",
+  "description": "Tasko — a todo-list CLI app showcasing specgraph verification",
   "private": true,
   "type": "module",
-  "version": "0.1.0",
+  "bin": {
+    "tasko": "./dist/main.js"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "docs:check": "agent-docs check --strict",
-    "docs:generate": "agent-docs generate --format both",
-    "docs:doctor": "agent-docs doctor",
-    "contracts:check": "echo \"No contract checks configured for example project\"",
-    "contracts:generate": "echo \"No contract generators configured for example project\""
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "verify": "specgraph verify",
+    "verify:explain": "specgraph explain"
   },
   "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "better-sqlite3": "^12.8.0",
+    "chalk": "^5.3.0",
+    "commander": "^13.0.0"
   },
   "devDependencies": {
-    "@tsconfig/node22": "^22.0.0",
-    "@45ck/agent-docs": "file:../..",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "@vitejs/plugin-react": "^4.3.3",
-    "typescript": "^5.7.2",
-    "vite": "^5.4.10"
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.2"
   }
 }
