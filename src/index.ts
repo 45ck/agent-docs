@@ -24,7 +24,7 @@ const program = new Command();
 program
   .name('specgraph')
   .description('Structured planning artifacts, traceability, and AI-agent-safe documentation workflows')
-  .version('0.5.0');
+  .version('0.5.1');
 
 program
   .command('init')
