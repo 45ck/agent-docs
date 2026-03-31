@@ -8,7 +8,7 @@ import { runDoctor } from './commands/doctor.js';
 import { runInstallGates } from './commands/hooks.js';
 import { runContractCheck, runContractGenerate } from './commands/contracts.js';
 import { runReport } from './commands/report.js';
-import { registerV2Commands } from './v2/commands.js';
+import { registerV2Commands } from './commands/verify.js';
 
 const program = new Command();
 

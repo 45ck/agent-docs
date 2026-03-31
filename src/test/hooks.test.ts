@@ -18,8 +18,8 @@ test('runInstallGates writes portable hooks with scoped npx fallbacks', async ()
   await withTempDir(async (root) => {
     await runInstallGates(root, false, false, true);
 
-    const preCommit = await readFile(path.join(root, '.agent-docs', 'hooks', 'pre-commit'), 'utf8');
-    const prePush = await readFile(path.join(root, '.agent-docs', 'hooks', 'pre-push'), 'utf8');
+    const preCommit = await readFile(path.join(root, '.specgraph', 'hooks', 'pre-commit'), 'utf8');
+    const prePush = await readFile(path.join(root, '.specgraph', 'hooks', 'pre-push'), 'utf8');
 
     for (const content of [preCommit, prePush]) {
       assert.match(content, /set -eu/);

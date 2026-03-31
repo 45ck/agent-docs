@@ -15,9 +15,56 @@ import type {
 } from './types.js';
 import { uuid } from './id.js';
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const MIGRATION_V1_TO_V2 = `
+CREATE TABLE IF NOT EXISTS generated_outputs (
+  id            TEXT PRIMARY KEY,
+  spec_id       TEXT NOT NULL DEFAULT '',
+  source_path   TEXT NOT NULL,
+  source_hash   TEXT NOT NULL,
+  output_path   TEXT NOT NULL,
+  format        TEXT NOT NULL DEFAULT 'markdown',
+  generated_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  run_id        TEXT,
+  FOREIGN KEY (run_id) REFERENCES provider_runs(run_id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_generated_outputs_spec ON generated_outputs(spec_id);
+CREATE INDEX IF NOT EXISTS idx_generated_outputs_source ON generated_outputs(source_path);
+
+CREATE TABLE IF NOT EXISTS gate_reports (
+  id             TEXT PRIMARY KEY,
+  run_id         TEXT,
+  generated_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  source_root    TEXT NOT NULL,
+  total_errors   INTEGER NOT NULL DEFAULT 0,
+  total_warnings INTEGER NOT NULL DEFAULT 0,
+  total_info     INTEGER NOT NULL DEFAULT 0,
+  files_checked  INTEGER NOT NULL DEFAULT 0,
+  docs_checked   INTEGER NOT NULL DEFAULT 0,
+  raw_json       TEXT NOT NULL,
+  FOREIGN KEY (run_id) REFERENCES provider_runs(run_id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_gate_reports_run ON gate_reports(run_id);
+CREATE INDEX IF NOT EXISTS idx_gate_reports_root ON gate_reports(source_root, generated_at);
+
+CREATE TABLE IF NOT EXISTS contradictions (
+  id               TEXT PRIMARY KEY,
+  spec_ids_json    TEXT NOT NULL,
+  severity         TEXT NOT NULL CHECK(severity IN ('low','medium','high','critical')),
+  status           TEXT NOT NULL DEFAULT 'open' CHECK(status IN ('open','mitigated','resolved')),
+  rationale        TEXT,
+  mitigations_json TEXT,
+  created_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  updated_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  run_id           TEXT,
+  FOREIGN KEY (run_id) REFERENCES provider_runs(run_id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_contradictions_status ON contradictions(status);
+CREATE INDEX IF NOT EXISTS idx_contradictions_severity ON contradictions(severity);
+`;
 
 // ─── Open / Migrate ─────────────────────────────────────────────
 
@@ -32,11 +79,24 @@ export function openStore(root: string): SpecGraphStore {
   db.pragma('busy_timeout = 5000');
 
   const currentVersion = (db.pragma('user_version', { simple: true }) as number) ?? 0;
-  if (currentVersion < SCHEMA_VERSION) {
+
+  if (currentVersion < 1) {
+    // Fresh install: apply full schema
     const schemaSql = readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
     db.exec('BEGIN IMMEDIATE');
     try {
       db.exec(schemaSql);
+      db.pragma(`user_version = ${SCHEMA_VERSION}`);
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
+    }
+  } else if (currentVersion < 2) {
+    // Existing v1 DB: apply only the new tables
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      db.exec(MIGRATION_V1_TO_V2);
       db.pragma(`user_version = ${SCHEMA_VERSION}`);
       db.exec('COMMIT');
     } catch (err) {
@@ -369,6 +429,117 @@ export class SpecGraphStore {
         waiverId: r.waiver_id ?? undefined,
       };
     });
+  }
+
+  // ── Generated Outputs ───────────────────────────────────────
+
+  insertGeneratedOutput(entry: {
+    id: string; specId: string; sourcePath: string;
+    sourceHash: string; outputPath: string; format: string; runId?: string;
+  }): void {
+    this.db.prepare(`
+      INSERT OR REPLACE INTO generated_outputs
+        (id, spec_id, source_path, source_hash, output_path, format, run_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(entry.id, entry.specId, entry.sourcePath, entry.sourceHash, entry.outputPath, entry.format, entry.runId ?? null);
+  }
+
+  listGeneratedOutputs(specId?: string): Array<{
+    id: string; specId: string; sourcePath: string; sourceHash: string;
+    outputPath: string; format: string; generatedAt: string;
+  }> {
+    const rows = specId
+      ? this.db.prepare(`SELECT * FROM generated_outputs WHERE spec_id = ? ORDER BY generated_at DESC`).all(specId)
+      : this.db.prepare(`SELECT * FROM generated_outputs ORDER BY generated_at DESC`).all();
+    return (rows as Array<Record<string, unknown>>).map(r => ({
+      id: r.id as string,
+      specId: r.spec_id as string,
+      sourcePath: r.source_path as string,
+      sourceHash: r.source_hash as string,
+      outputPath: r.output_path as string,
+      format: r.format as string,
+      generatedAt: r.generated_at as string,
+    }));
+  }
+
+  // ── Gate Reports ────────────────────────────────────────────
+
+  insertGateReport(report: {
+    id: string; runId?: string; sourceRoot: string;
+    totalErrors: number; totalWarnings: number; totalInfo: number;
+    filesChecked: number; docsChecked: number; rawJson: string;
+  }): void {
+    this.db.prepare(`
+      INSERT INTO gate_reports
+        (id, run_id, source_root, total_errors, total_warnings, total_info, files_checked, docs_checked, raw_json)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(report.id, report.runId ?? null, report.sourceRoot, report.totalErrors, report.totalWarnings, report.totalInfo, report.filesChecked, report.docsChecked, report.rawJson);
+  }
+
+  getLatestGateReport(sourceRoot: string): {
+    id: string; generatedAt: string; sourceRoot: string;
+    totalErrors: number; totalWarnings: number; totalInfo: number;
+    filesChecked: number; docsChecked: number; rawJson: string;
+  } | null {
+    const row = this.db.prepare(`
+      SELECT * FROM gate_reports WHERE source_root = ? ORDER BY generated_at DESC LIMIT 1
+    `).get(sourceRoot) as Record<string, unknown> | undefined;
+    if (!row) return null;
+    return {
+      id: row.id as string,
+      generatedAt: row.generated_at as string,
+      sourceRoot: row.source_root as string,
+      totalErrors: row.total_errors as number,
+      totalWarnings: row.total_warnings as number,
+      totalInfo: row.total_info as number,
+      filesChecked: row.files_checked as number,
+      docsChecked: row.docs_checked as number,
+      rawJson: row.raw_json as string,
+    };
+  }
+
+  // ── Contradictions ──────────────────────────────────────────
+
+  upsertContradiction(entry: {
+    id: string; specIds: string[]; severity: string;
+    status: string; rationale?: string; mitigations?: string[]; runId?: string;
+  }): void {
+    this.db.prepare(`
+      INSERT INTO contradictions
+        (id, spec_ids_json, severity, status, rationale, mitigations_json, run_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        spec_ids_json = excluded.spec_ids_json,
+        severity = excluded.severity,
+        status = excluded.status,
+        rationale = excluded.rationale,
+        mitigations_json = excluded.mitigations_json,
+        run_id = excluded.run_id,
+        updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
+    `).run(
+      entry.id, JSON.stringify(entry.specIds), entry.severity, entry.status,
+      entry.rationale ?? null, entry.mitigations ? JSON.stringify(entry.mitigations) : null,
+      entry.runId ?? null,
+    );
+  }
+
+  listContradictions(status?: string): Array<{
+    id: string; specIds: string[]; severity: string; status: string;
+    rationale?: string; mitigations?: string[]; createdAt: string; updatedAt: string;
+  }> {
+    const rows = status
+      ? this.db.prepare(`SELECT * FROM contradictions WHERE status = ? ORDER BY created_at DESC`).all(status)
+      : this.db.prepare(`SELECT * FROM contradictions ORDER BY created_at DESC`).all();
+    return (rows as Array<Record<string, unknown>>).map(r => ({
+      id: r.id as string,
+      specIds: JSON.parse(r.spec_ids_json as string) as string[],
+      severity: r.severity as string,
+      status: r.status as string,
+      rationale: r.rationale as string | undefined,
+      mitigations: r.mitigations_json ? JSON.parse(r.mitigations_json as string) as string[] : undefined,
+      createdAt: r.created_at as string,
+      updatedAt: r.updated_at as string,
+    }));
   }
 
   // ── Transaction helper ──────────────────────────────────────

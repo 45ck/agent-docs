@@ -12,6 +12,7 @@ const DEFAULT_IGNORE: string[] = [
   '.vscode',
   'dist',
   'coverage',
+  '.specgraph',
   '.agent-docs',
   '.githooks',
   '.idea',
@@ -28,7 +29,7 @@ export const DEFAULT_CONFIG: Omit<AgentDocsConfig, 'version'> = {
     markdownRoot: 'generated',
     allowMdOnlyWhenGenerated: true,
     indexTitle: 'Agent Docs Index',
-    manifestPath: '.agent-docs/manifest.json',
+    manifestPath: '.specgraph/manifest.json',
     markdownHeaderPrefix: '# ',
   },
   markdownPolicy: {
@@ -92,6 +93,7 @@ export const DEFAULT_CONFIG: Omit<AgentDocsConfig, 'version'> = {
       'node_modules',
       'dist',
       'coverage',
+      '.specgraph',
       '.agent-docs',
       '.beads',
       '.claude',
@@ -103,10 +105,10 @@ export const DEFAULT_CONFIG: Omit<AgentDocsConfig, 'version'> = {
       'reports',
     ],
   },
-  reportPath: '.agent-docs/reports/check-report.json',
+  reportPath: '.specgraph/reports/check-report.json',
   hooks: {
-    preCommitPath: '.agent-docs/hooks/pre-commit',
-    prePushPath: '.agent-docs/hooks/pre-push',
+    preCommitPath: '.specgraph/hooks/pre-commit',
+    prePushPath: '.specgraph/hooks/pre-push',
     installGitHooks: false,
   },
 };
@@ -117,21 +119,25 @@ const DEFAULT_CONFIG_FILE = {
 };
 
 export async function loadConfig(root: string): Promise<AgentDocsConfig> {
-  const configPath = path.join(root, '.agent-docs', 'config.json');
-  try {
-    const raw = await fs.readFile(configPath, 'utf8');
-    const parsed = JSON.parse(raw) as Partial<AgentDocsConfig>;
-    return hydrateConfig(parsed);
-  } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      return hydrateConfig(DEFAULT_CONFIG_FILE);
+  // Try .specgraph/config.json first, then fall back to legacy .agent-docs/config.json
+  const candidates = [
+    path.join(root, '.specgraph', 'config.json'),
+    path.join(root, '.agent-docs', 'config.json'),
+  ];
+  for (const candidate of candidates) {
+    try {
+      const raw = await fs.readFile(candidate, 'utf8');
+      const parsed = JSON.parse(raw) as Partial<AgentDocsConfig>;
+      return hydrateConfig(parsed);
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
     }
-    throw err;
   }
+  return hydrateConfig(DEFAULT_CONFIG_FILE);
 }
 
 export async function writeDefaultConfig(root: string): Promise<string> {
-  const dir = path.join(root, '.agent-docs');
+  const dir = path.join(root, '.specgraph');
   await fs.mkdir(dir, { recursive: true });
   const configPath = path.join(dir, 'config.json');
   await fs.writeFile(configPath, JSON.stringify(DEFAULT_CONFIG_FILE, null, 2), 'utf8');
