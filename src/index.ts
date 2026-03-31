@@ -19,7 +19,7 @@ program
 
 program
   .command('init')
-  .description('Initialize .agent-docs config, templates, and hooks')
+  .description('Initialize .specgraph config, templates, and hooks')
   .argument('[root]', 'Project root', process.cwd())
   .action((root: string) => {
     runInit(path.resolve(root))
@@ -124,7 +124,7 @@ program
   .description('Install git hooks for pre-commit and pre-push checks')
   .argument('[root]', 'Project root', process.cwd())
   .option('--force', 'Overwrite existing hooks')
-  .option('--core-path', 'Configure git to use .agent-docs/hooks')
+  .option('--core-path', 'Configure git to use .specgraph/hooks')
   .option('--quality', 'Also run @45ck/noslop checks inside generated hooks when available')
   .action(async (root: string, options: { force?: boolean; corePath?: boolean; quality?: boolean }) => {
     await runInstallGates(

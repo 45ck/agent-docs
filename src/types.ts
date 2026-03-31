@@ -138,8 +138,10 @@ export interface Spec {
   requiredEvidence?: RequiredEvidence;
   subjects?: SpecSubjects;
   dependsOn?: string[];
+  conflictsWith?: string[];
   tags?: string[];
   waivers?: WaiverDef[];
+  metadata?: Record<string, unknown>;
   sourcePath: string;
   sourceHash: string;
 }

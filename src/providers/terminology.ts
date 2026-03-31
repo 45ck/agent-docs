@@ -46,8 +46,7 @@ export class TerminologyProvider implements Provider {
     }
 
     for (const spec of domainTreeSpecs) {
-      const raw = spec as unknown as Record<string, unknown>;
-      const terms = raw.terms ?? raw.metadata?.['terms' as keyof typeof raw.metadata];
+      const terms = spec.metadata?.['terms'];
       if (Array.isArray(terms)) {
         for (const t of terms) {
           if (typeof t === 'string') definedTerms.add(t.toLowerCase());

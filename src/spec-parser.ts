@@ -183,8 +183,20 @@ export function parseSpecFile(filePath: string, root: string): Spec | null {
   const dependsOnRaw = data.depends_on ?? data.dependsOn;
   const dependsOn = Array.isArray(dependsOnRaw) ? dependsOnRaw as string[] : undefined;
 
+  const conflictsWithRaw = data.conflicts_with ?? data.conflictsWith;
+  const conflictsWith = Array.isArray(conflictsWithRaw) ? conflictsWithRaw as string[] : undefined;
+
   const tagsRaw = data.tags;
   const tags = Array.isArray(tagsRaw) ? tagsRaw as string[] : undefined;
+
+  // Carry all remaining frontmatter fields in metadata for provider use
+  const KNOWN_FIELDS = new Set(['id', 'title', 'state', 'kind', 'owner', 'priority', 'description',
+    'required_evidence', 'subjects', 'depends_on', 'dependsOn', 'conflicts_with', 'conflictsWith',
+    'tags', 'waivers']);
+  const metadata: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (!KNOWN_FIELDS.has(k)) metadata[k] = v;
+  }
 
   const sourceHash = createHash('sha256').update(content).digest('hex');
   const sourcePath = path.relative(root, filePath).replace(/\\/g, '/');
@@ -200,8 +212,10 @@ export function parseSpecFile(filePath: string, root: string): Spec | null {
     requiredEvidence,
     subjects,
     dependsOn,
+    conflictsWith,
     tags,
     waivers,
+    metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
     sourcePath,
     sourceHash,
   };

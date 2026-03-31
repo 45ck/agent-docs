@@ -66,7 +66,7 @@ export class CrossRefProvider implements Provider {
       }
 
       // conflictsWith references
-      for (const targetId of extractConflictsWith(spec)) {
+      for (const targetId of (spec.conflictsWith ?? [])) {
         const dst = makeSubjectId('spec', 'specgraph', targetId);
         const exists = knownIds.has(targetId);
         const strength = exists ? EvidenceStrength.E1 : EvidenceStrength.E0;
@@ -106,9 +106,3 @@ function deterministicId(src: string, relation: string, dst: string): string {
     .slice(0, 32);
 }
 
-function extractConflictsWith(spec: unknown): string[] {
-  const raw = spec as Record<string, unknown>;
-  const conflicts = raw.conflictsWith ?? raw.conflicts_with;
-  if (Array.isArray(conflicts)) return conflicts as string[];
-  return [];
-}

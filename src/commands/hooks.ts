@@ -29,11 +29,12 @@ export async function runInstallGates(
   }
 
   if (useCoreHooksPath) {
-    const hooksDirectory = path.join(resolved, '.agent-docs', 'hooks');
+    const hooksDirectory = path.dirname(path.join(resolved, config.hooks.preCommitPath));
+    const relHooksDir = path.relative(resolved, hooksDirectory).replace(/\\/g, '/');
     const localPreCommit = path.join(hooksDirectory, 'pre-commit');
     const localPrePush = path.join(hooksDirectory, 'pre-push');
     if (!force && (await fileExists(localPreCommit)) && (await fileExists(localPrePush))) {
-      console.log('Hook files already exist in .agent-docs/hooks; use --force to overwrite.');
+      console.log(`Hook files already exist in ${relHooksDir}; use --force to overwrite.`);
     } else {
       await writeText(localPreCommit, preCommitContent);
       await writeText(localPrePush, prePushContent);
@@ -41,8 +42,8 @@ export async function runInstallGates(
 
     const hasGit = await fileExists(configPath(resolved, '.git'));
     if (hasGit) {
-      await execGitCommand(['config', 'core.hooksPath', '.agent-docs/hooks'], resolved);
-      console.log('Configured git core.hooksPath to .agent-docs/hooks');
+      await execGitCommand(['config', 'core.hooksPath', relHooksDir], resolved);
+      console.log(`Configured git core.hooksPath to ${relHooksDir}`);
     } else {
       console.log('No .git folder found; wrote hook scripts to local hook paths only.');
     }

@@ -28,8 +28,8 @@ export async function runInit(root: string): Promise<void> {
   const docsDir = path.join(target, 'docs');
   await ensureDirectory(docsDir);
 
-  const templateDestination = path.join(target, '.agent-docs', 'templates');
-  const hookDestination = path.join(target, '.agent-docs', 'hooks');
+  const templateDestination = path.join(target, '.specgraph', 'templates');
+  const hookDestination = path.join(target, '.specgraph', 'hooks');
   await copyDirectory(packageTemplateSource(), templateDestination);
   await copyDirectory(packageHookSource(), hookDestination);
 
