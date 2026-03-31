@@ -59,7 +59,10 @@
     "init": "node dist/index.js init",
     "install-gates": "node dist/index.js install-gates",
     "test": "node --test dist/test/*.test.js dist/test/v2/*.test.js",
-    "pack:smoke": "node scripts/pack-smoke.mjs"
+    "pack:smoke": "node scripts/pack-smoke.mjs",
+    "docs:check": "agent-docs check",
+    "docs:generate": "agent-docs generate --format both",
+    "docs:report": "agent-docs report --all"
   },
   "publishConfig": {
     "access": "public"
