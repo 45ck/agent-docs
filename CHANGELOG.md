@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.1
+
+### skill-harness integration
+
+- Add `plugins/specgraph-skills/` — a [skill-harness](https://github.com/45ck/skill-harness) plugin with five workflow skills: `spec-writer`, `evidence-gap-review`, `waiver-writer`, `verify-interpreter`, `annotation-writer`
+- Each skill is a `SKILL.md` document with YAML frontmatter and decision-table guidance for agents
+- Plugin metadata in `.codex-plugin/plugin.json` for skill-harness compatibility
+- README: document `skill-harness setup-project` bootstrap path and manual skill installation
+- Include `plugins/` in npm published files
+
 ## 0.5.0
 
 Full Phase 2 consolidation — unified specgraph system.

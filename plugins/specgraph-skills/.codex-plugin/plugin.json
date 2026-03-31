@@ -1,0 +1,6 @@
+{
+  "name": "specgraph-skills",
+  "version": "1.0.0",
+  "description": "specgraph workflow skills — spec writing, evidence review, waiver authoring, and verify interpretation for the @45ck/agent-docs ecosystem",
+  "skills": "./skills/"
+}

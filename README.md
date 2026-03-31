@@ -27,6 +27,17 @@ npm install github:45ck/agent-docs
 
 The binary is available as both `specgraph` and `agent-docs`.
 
+### Bootstrap with skill-harness
+
+If you use [skill-harness](https://github.com/45ck/skill-harness) to manage your agent tooling stack, `setup-project` installs and initialises specgraph automatically:
+
+```bash
+skill-harness setup-project --dir ./my-project
+# installs @45ck/agent-docs, runs `specgraph init`, installs quality gates
+```
+
+Skip specific steps with `--skip-agent-docs`, `--skip-beads`, or `--skip-noslop`.
+
 ---
 
 ## Quick start — spec verification
@@ -373,6 +384,35 @@ bd create "Implement login" --spec-id FEAT-001
 ```
 
 Install `@beads/bd >= 0.60.0` as an optional peer dependency.
+
+---
+
+## skill-harness agent skills
+
+The `plugins/specgraph-skills/` directory ships a [skill-harness](https://github.com/45ck/skill-harness) plugin with five workflow skills for day-to-day specgraph operations:
+
+| Skill | What it guides |
+|---|---|
+| `spec-writer` | Creating spec documents with correct frontmatter and evidence requirements |
+| `evidence-gap-review` | Analysing `specgraph verify` output to find the lowest-effort evidence fixes |
+| `waiver-writer` | Writing justified evidence waivers with expiry and approval fields |
+| `verify-interpreter` | Interpreting verification output and recommending next steps |
+| `annotation-writer` | Adding `@spec`/`@implements` JSDoc annotations to source files |
+
+### Install skills via skill-harness
+
+```bash
+# Install the specgraph-skills plugin
+skill-harness install --packs specgraph-skills
+```
+
+### Manual installation
+
+```bash
+cp -r plugins/specgraph-skills/skills/* ~/.claude/skills/
+```
+
+Once installed, reference skills in your agent workflow: _"use the spec-writer skill to draft AUTH-001"_ or _"use evidence-gap-review to analyse the verify output"_.
 
 ---
 
