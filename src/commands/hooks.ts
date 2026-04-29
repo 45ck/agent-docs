@@ -7,6 +7,7 @@
  */
 import path from 'node:path';
 import { execSync } from 'node:child_process';
+import fs from 'node:fs/promises';
 import { configPath, fileExists, loadConfig } from '../config.js';
 import { writeText } from '../lib/utils.js';
 
@@ -29,10 +30,10 @@ export async function runInstallGates(
   const prePushContent = generateHookScripts({ useNoslop, runContracts, isPrePush: true });
 
   if (preCommitTarget === prePushTarget) {
-    await writeText(preCommitTarget, preCommitContent);
+    await writeExecutableHook(preCommitTarget, preCommitContent);
   } else {
-    await writeText(preCommitTarget, preCommitContent);
-    await writeText(prePushTarget, prePushContent);
+    await writeExecutableHook(preCommitTarget, preCommitContent);
+    await writeExecutableHook(prePushTarget, prePushContent);
   }
 
   if (useCoreHooksPath) {
@@ -43,8 +44,8 @@ export async function runInstallGates(
     if (!force && (await fileExists(localPreCommit)) && (await fileExists(localPrePush))) {
       console.log(`Hook files already exist in ${relHooksDir}; use --force to overwrite.`);
     } else {
-      await writeText(localPreCommit, preCommitContent);
-      await writeText(localPrePush, prePushContent);
+      await writeExecutableHook(localPreCommit, preCommitContent);
+      await writeExecutableHook(localPrePush, prePushContent);
     }
 
     const hasGit = await fileExists(configPath(resolved, '.git'));
@@ -115,11 +116,9 @@ function generateHookScripts(params: { useNoslop: boolean; runContracts: boolean
       '  elif command -v agent-docs >/dev/null 2>&1; then',
       '    agent-docs contracts check --strict "${ROOT_DIR}"',
       '    return $?',
-      '  elif command -v npx >/dev/null 2>&1; then',
-      '    npx --yes --quiet @45ck/agent-docs contracts check --strict "${ROOT_DIR}"',
-      '    return $?',
       '  else',
-      '    return 0',
+      '    echo "[agent-docs] No agent-docs executable available for contract checks."',
+      '    return 1',
       '  fi',
       '}',
       'run_contract_checks',
@@ -132,15 +131,18 @@ function generateHookScripts(params: { useNoslop: boolean; runContracts: boolean
     '  exec "${ROOT_DIR}/node_modules/.bin/agent-docs" check --strict "${ROOT_DIR}"',
     'elif command -v agent-docs >/dev/null 2>&1; then',
     '  exec agent-docs check --strict "${ROOT_DIR}"',
-    'elif command -v npx >/dev/null 2>&1; then',
-    '  exec npx --yes --quiet @45ck/agent-docs check --strict "${ROOT_DIR}"',
     'else',
-    '  echo "[agent-docs] No agent-docs executable available."',
+    '  echo "[agent-docs] No agent-docs executable available. Install the project dependencies or put agent-docs on PATH."',
     '  exit 1',
     'fi',
   );
 
   return lines.join('\n');
+}
+
+async function writeExecutableHook(target: string, content: string): Promise<void> {
+  await writeText(target, content);
+  await fs.chmod(target, 0o755);
 }
 
 async function reportNoslopAvailability(root: string): Promise<void> {

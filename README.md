@@ -15,7 +15,7 @@ Both workflows share a single config at `.specgraph/config.json`.
 
 ## Does it actually work?
 
-Five controlled experiments compared the full toolkit (specgraph + noslop + skill-harness skills) against raw Claude Code with no tooling, across different task types. Full data: [`skill-harness/experiments/RESULTS.md`](https://github.com/45ck/skill-harness/blob/main/experiments/RESULTS.md).
+Controlled experiments compared the full toolkit (specgraph + noslop + skill-harness skills) against raw Claude Code with no tooling, across different task types. Full data: [`skill-harness/experiments/RESULTS.md`](https://github.com/45ck/skill-harness/blob/main/experiments/RESULTS.md).
 
 | Experiment | Group A (toolkit) | Group B (baseline) | Delta |
 |---|:---:|:---:|:---:|
@@ -38,14 +38,16 @@ Five controlled experiments compared the full toolkit (specgraph + noslop + skil
 
 ## Installation
 
-```bash
-npm install @45ck/agent-docs
-```
-
-Or from GitHub until the npm release is available:
+From GitHub until the npm release is available:
 
 ```bash
 npm install github:45ck/agent-docs
+```
+
+When the scoped npm package is published, this command is expected to work:
+
+```bash
+npm install @45ck/agent-docs
 ```
 
 The binary is available as both `specgraph` and `agent-docs`.
@@ -339,7 +341,7 @@ Quick environment and config validation.
 
 ### `specgraph install-gates [root]`
 
-Install git hooks for pre-commit/pre-push checks.
+Install executable git hooks for pre-commit/pre-push checks. The hooks look for a local `node_modules/.bin/agent-docs` first, then a global `agent-docs` on `PATH`. They intentionally do not use an `npx @45ck/agent-docs` fallback while the scoped package is not guaranteed to be published.
 
 Options: `--core-path`, `--force`, `--quality` (enables `@45ck/noslop` when available)
 
